@@ -14,13 +14,38 @@ set(BINARY_NAME "${PROJECT_NAME}")
 # Define the static library target
 # --------------------------------------------
 SET(LIBRARY_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/exatepp_abm.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/exatepp_abm.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/constants.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/typedefs.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.cu
 )
 
 flamegpu_add_library("${LIBRARY_NAME}" "${LIBRARY_SRC}" "${FLAMEGPU_ROOT}" "${PROJECT_BINARY_DIR}" FALSE)
 
+# Find and fetch 3rd party dependencies
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/CLI11.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/fmt.cmake)
 
+# Publicly link against the dependencies, in case they are used in tests. This could probably be private.
+target_link_libraries("${LIBRARY_NAME}" PUBLIC CLI11::CLI11)
+target_link_libraries("${LIBRARY_NAME}" PUBLIC fmt::fmt-header-only)
+
+# Ensure C++17 is being used (it should be already via flamegpu_add_library)
+set_property(TARGET "${LIBRARY_NAME}" PROPERTY CXX_STANDARD 17)
+
+# Windows specific fixes
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Prevent windows.h definition of MIN and MAX macros on windows
     target_compile_definitions(${LIBRARY_NAME} PRIVATE NOMINMAX)
@@ -28,7 +53,16 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_definitions(${LIBRARY_NAME} PRIVATE _USE_MATH_DEFINES)
 endif()
 
-# Add src directory to include path
+# Suppress warnings from fmt in cuda (unless CMake is new enough for add_subdirectory(... SYSTEM)
+if(CMAKE_VERSION VERSION_LESS "3.25.0")
+    target_compile_options(${LIBRARY_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcudafe --diag_suppress=128>")
+endif()
+
+# Enable host device constexpr?
+target_compile_options(${LIBRARY_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
+
+
+# Add src directory to include path, publicly so that the target library inherits this dependency (for now).
 target_include_directories("${LIBRARY_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
 # --------------------------------------------
@@ -37,10 +71,8 @@ target_include_directories("${LIBRARY_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/main.cu)
 flamegpu_add_executable("${BINARY_NAME}" "${SRC}" "${FLAMEGPU_ROOT}" "${PROJECT_BINARY_DIR}" FALSE)
 
-
 # Link against the static library target.
 target_link_libraries("${BINARY_NAME}" PRIVATE "${LIBRARY_NAME}")
-
 
 # --------------------------------------------
 # Define shorthand lint target

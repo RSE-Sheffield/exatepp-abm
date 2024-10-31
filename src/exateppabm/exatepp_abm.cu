@@ -19,8 +19,10 @@
 #include "exateppabm/cli.h"
 #include "exateppabm/input.h"
 #include "exateppabm/output.h"
+#include "exateppabm/output/PerformanceFile.h"
 #include "exateppabm/person.h"
 #include "exateppabm/population.h"
+#include "exateppabm/util.h"
 #include "exateppabm/visualisation.h"
 
 namespace exateppabm {
@@ -43,11 +45,32 @@ int entrypoint(int argc, char* argv[]) {
     // @temp - print the cli
     exateppabm::cli::print(*cli_params);
 
+    // Prep for performance data capture (this is the earliest we know the output location for now)
+    auto perfFile = exateppabm::output::PerformanceFile(cli_params->outputDir);
+    perfFile.timers.totalProgram.start();
+    perfFile.timers.configParsing.start();
+
     // Parse the provided path to an input file
     auto config = exateppabm::input::read(cli_params->inputParamFile);
 
     // @temp - print the parsed config.
     exateppabm::input::print(*config);
+
+    perfFile.timers.configParsing.stop();
+    perfFile.timers.preSimulate.start();
+
+    // Populate performance data with config and device values
+    perfFile.metadata.device_name = exateppabm::util::getGPUName(cli_params->device);
+    perfFile.metadata.device_sm_count = exateppabm::util::getGPUMultiProcessorCount(cli_params->device);
+    perfFile.metadata.device_memory = exateppabm::util::getGPUMemory(cli_params->device);
+    perfFile.metadata.build_type = exateppabm::util::getCMakeBuildType();
+    perfFile.metadata.flamegpu_seatbelts = exateppabm::util::getSeatbeltsEnabled();
+    perfFile.metadata.parameter_path = cli_params->inputParamFile;
+    perfFile.metadata.duration = config->duration;
+    perfFile.metadata.n_total = config->n_total;
+
+    // Initialise the CUDA context on the requested device to move timing (for now)
+    exateppabm::util::initialiseCUDAContext(cli_params->device);
 
     // Create the flamegpu 2 model description object
     flamegpu::ModelDescription model("ExaTEPP ABM demonstrator");
@@ -92,13 +115,30 @@ int entrypoint(int argc, char* argv[]) {
     }
     simulation.setPopulationData(*personPopulation);
 
+    perfFile.timers.preSimulate.stop();
+
     // Run the simulation
+    perfFile.timers.simulate.start();
+
     simulation.simulate();
+
+    perfFile.timers.simulate.stop();
+    perfFile.timers.postSimulate.start();
+
+    perfFile.timers.flamegpuRTCElapsed = simulation.getElapsedTimeRTCInitialisation();
+    perfFile.timers.flamegpuInitElapsed = simulation.getElapsedTimeInitFunctions();
+    perfFile.timers.flamegpuExitElapsed = simulation.getElapsedTimeExitFunctions();
+    perfFile.timers.flamegpuSimulateElapsed = simulation.getElapsedTimeSimulation();
+
+    perfFile.timers.postSimulate.start();
+
 
     // Join the visualisation thread (if required)
     exateppabm::visualisation::join();
 
-    fmt::print("@todo output timing data\n");
+    perfFile.timers.postSimulate.stop();
+    perfFile.timers.totalProgram.stop();
+    perfFile.write();
 
     return EXIT_SUCCESS;
 }

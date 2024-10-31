@@ -19,6 +19,8 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/OutputFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/typedefs.h
@@ -27,6 +29,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.cu

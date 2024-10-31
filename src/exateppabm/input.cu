@@ -44,7 +44,7 @@ bool valueFromCSVLine(std::string& line, T& value) {
 
 }  // anon namespace
 
-std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p) {
+std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, const int lineNumber) {
     // Construct the model parameters / config  struct
     auto c = std::make_shared<config>();
 
@@ -73,7 +73,15 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p) {
             throw std::runtime_error("failed to read the header line @todo nicer error message");
         }
 
-        // Read the 2nd line of the file which contains the parameter values
+        // Discard rows until the line number is the target line number
+        int currentLine = 1;
+        for (int currentLine = 0; currentLine < lineNumber; currentLine++) {
+            if (!std::getline(fs, line)) {
+                throw std::runtime_error("Bad parameters file lineNumber @todo nicer errors");
+            }
+        }
+
+        // Read the next line of the file which should contains the parameter values
         if (std::getline(fs, line)) {
             // Extract values from the line in the expected order, into the params struct
             // Error if any were missing / bad
@@ -125,10 +133,6 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p) {
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
         }
-
-
-
-
 
         fs.close();
         if (!valid_input_file) {

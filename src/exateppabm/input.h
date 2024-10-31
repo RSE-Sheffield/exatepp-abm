@@ -73,10 +73,11 @@ struct config {
  * Read simulation parameters from a CSV file
  *
  * @param p path to load parameters from
+ * @param lineNumber the line of CSV to use.
  * @return shared pointer to a configuration object 
  * @todo - support CSVs with multiple simulations, reading a single row
  */
-std::shared_ptr<exateppabm::input::config> read(std::filesystem::path p);
+std::shared_ptr<exateppabm::input::config> read(std::filesystem::path p, int lineNumber);
 
 /**
  * Print the loaded simulation configuration to stdout for validation

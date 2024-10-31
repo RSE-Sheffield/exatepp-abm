@@ -35,8 +35,8 @@ bool PerformanceFile::write() {
     fmt::print(_handle, "  \"n_total\": {},\n", this->metadata.n_total);
     fmt::print(_handle, "  \"totalProgram\": {},\n", this->timers.totalProgram.getElapsedSeconds());
     fmt::print(_handle, "  \"configParsing\": {},\n", this->timers.configParsing.getElapsedSeconds());
-    fmt::print(_handle, "  \"simulate\": {},\n", this->timers.simulate.getElapsedSeconds());
     fmt::print(_handle, "  \"preSimulate\": {},\n", this->timers.preSimulate.getElapsedSeconds());
+    fmt::print(_handle, "  \"simulate\": {},\n", this->timers.simulate.getElapsedSeconds());
     fmt::print(_handle, "  \"postSimulate\": {},\n", this->timers.postSimulate.getElapsedSeconds());
     fmt::print(_handle, "  \"flamegpuRTCElapsed\": {},\n", this->timers.flamegpuRTCElapsed);
     fmt::print(_handle, "  \"flamegpuInitElapsed\": {},\n", this->timers.flamegpuInitElapsed);

@@ -30,6 +30,10 @@ struct params {
      */
     std::string inputParamFile;
     /**
+     * Line number from the input paramater file to use. 1 indexed (assuming a header which is discared)
+     */
+    int inputParamLine = 1;
+    /**
      * Path to directory for file output
      */
     std::string outputDir = std::filesystem::current_path();

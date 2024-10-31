@@ -99,13 +99,13 @@ class PerformanceFile : public OutputFile {
          */
         flamegpu::detail::SteadyClockTimer configParsing;
         /**
-         * Steady clock timer for simulate()
-         */
-        flamegpu::detail::SteadyClockTimer simulate;
-        /**
          * Steady clock timer for model construction
          */
         flamegpu::detail::SteadyClockTimer preSimulate;
+        /**x
+         * Steady clock timer for simulate()
+         */
+        flamegpu::detail::SteadyClockTimer simulate;
         /**
          * Steady clock timer for post simulation (excluding output of this file)
          */

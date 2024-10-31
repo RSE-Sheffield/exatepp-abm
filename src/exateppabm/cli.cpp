@@ -12,6 +12,8 @@ void setup(CLI::App& app, std::shared_ptr<exateppabm::cli::params> params) {
     app.add_option("-d, --device", params->device, "CUDA Device ordinal (GPU) to use (0 indexed)");
     app.add_flag("-v, --verbose", params->verbosity, "Verbosity of simulation output, forwarded to FLAME GPU 2");
     app.add_option("-i, --input-file", params->inputParamFile, "Path to input parameters file");
+    app.add_option("-n, --param-number", params->inputParamLine, "The line from the parameters file to use. 1 indexed (assuming there is a header)");
+
     app.add_option("-o, --output-dir", params->outputDir, "Path to output directory");
 }
 

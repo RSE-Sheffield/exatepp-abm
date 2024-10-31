@@ -51,7 +51,7 @@ int entrypoint(int argc, char* argv[]) {
     perfFile.timers.configParsing.start();
 
     // Parse the provided path to an input file
-    auto config = exateppabm::input::read(cli_params->inputParamFile);
+    auto config = exateppabm::input::read(cli_params->inputParamFile, cli_params->inputParamLine);
 
     // @temp - print the parsed config.
     exateppabm::input::print(*config);

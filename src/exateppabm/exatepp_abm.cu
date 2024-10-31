@@ -1,4 +1,4 @@
-#include "flamegpu/flamegpu.h"
+#include <memory>
 
 // CLI11 command line interface
 #include "CLI/App.hpp"
@@ -9,6 +9,10 @@
 #include "fmt/core.h"
 #include "fmt/chrono.h"
 
+// Flamegpu's main header
+#include "flamegpu/flamegpu.h"
+
+// exateppabm includes
 #include "exateppabm/exatepp_abm.h"
 #include "exateppabm/constants.h"
 #include "exateppabm/typedefs.h"
@@ -22,8 +26,7 @@
 namespace exateppabm {
 
 int entrypoint(int argc, char* argv[]) {
-
-    // Build the CLI 
+    // Build the CLI
     // @todo - should this move to main.cpp, and instead be passed to entrypoint?
     auto cli_params = std::make_shared<exateppabm::cli::params>();
     CLI::App app{"ExaTEPP Agent Based Model epidemiology demonstrator"};
@@ -43,7 +46,7 @@ int entrypoint(int argc, char* argv[]) {
     // Parse the provided path to an input file
     auto config = exateppabm::input::read(cli_params->inputParamFile);
 
-    // @temp - print the parsed config. 
+    // @temp - print the parsed config.
     exateppabm::input::print(*config);
 
     // Create the flamegpu 2 model description object
@@ -65,24 +68,24 @@ int entrypoint(int argc, char* argv[]) {
     flamegpu::CUDASimulation simulation(model);
 
     // Setup the visualisation (if enabled)
-    bool enableVisualisation = true; // @todo make cli controllable if keeping
-    bool paused = true; // @todo make cli controllable
-    unsigned int visSPS = 20; // @todo make cli controllable. target simulation steps per second for visualisation purposes. 
+    bool enableVisualisation = true;  // @todo make cli controllable if keeping
+    bool paused = true;  // @todo make cli controllable
+    unsigned int visSPS = 20;  // @todo make cli controllable. target simulation steps per second for visualisation purposes.
     exateppabm::visualisation::setup(enableVisualisation, model, simulation, paused, visSPS);
 
     // Setup simulation configuration options
 
-    simulation.SimulationConfig().steps = config->duration; // @todo - change this to be controlled by an exit condition?
-    
+    simulation.SimulationConfig().steps = config->duration;  // @todo - change this to be controlled by an exit condition?
+
     // Seed the FLAME GPU 2 RNG seed. This is independent from RNG on the host, but we only have one RNG engine available in FLAME GPU 2 currently.
-    simulation.SimulationConfig().random_seed = config->rng_seed; // @todo - split seeds
+    simulation.SimulationConfig().random_seed = config->rng_seed;  // @todo - split seeds
 
     // Set the GPU index
     simulation.CUDAConfig().device_id = cli_params->device;
 
-    // Generate the population of agents. 
+    // Generate the population of agents.
     // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
-    const std::uint64_t pop_seed = config->rng_seed; // @todo - split seeds
+    const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
     auto personPopulation = exateppabm::population::generate(model, *config, env_width, interactionRadius);
     if (personPopulation == nullptr) {
         throw std::runtime_error("@todo - bad population generation function.");

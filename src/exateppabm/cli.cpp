@@ -2,6 +2,8 @@
 
 #include <fmt/core.h>
 
+#include <memory>
+
 namespace exateppabm {
 
 namespace cli {
@@ -23,5 +25,4 @@ void print(const exateppabm::cli::params params) {
 }
 
 }  // namespace cli
-
 }  // namespace exateppabm

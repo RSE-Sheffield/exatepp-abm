@@ -1,20 +1,21 @@
-#include "population.h"
-
-#include <random>
-#include <numeric>
-#include <algorithm>
+#include "exateppabm/population.h"
 
 #include <fmt/core.h>
 
-#include "person.h"
-#include "input.h"
+#include <algorithm>
+#include <numeric>
+#include <memory>
+#include <random>
+#include <vector>
+
+#include "exateppabm/person.h"
+#include "exateppabm/input.h"
 
 namespace exateppabm {
 
 namespace population {
 
 std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const float env_width, const float interactionRadius) {
-
     fmt::print("@todo - validate config inputs when generated agents (pop size, initial infected count etc)\n");
 
     // @todo - assert that the requested initial population is non zero.
@@ -85,8 +86,8 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         float demo_random = demo_dist(rng);
         // @todo - abstract this into a method.
         exateppabm::person::Demographic demo = exateppabm::person::Demographic::AGE_0_9;
-        for(std::uint8_t i = 0; i < exateppabm::person::DEMOGRAPHIC_COUNT; i++) {
-            if(demo_random < demographicProbabilties[i]){
+        for (std::uint8_t i = 0; i < exateppabm::person::DEMOGRAPHIC_COUNT; i++) {
+            if (demo_random < demographicProbabilties[i]) {
                 demo = allDemographics[i];
                 createdPerDemographic[i]++;
                 break;
@@ -127,7 +128,5 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     return pop;
 }
 
-
-}  // namespsace population
-
-} // namespace exateppabm
+}  // namespace population
+}  // namespace exateppabm

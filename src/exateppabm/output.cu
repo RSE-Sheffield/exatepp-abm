@@ -1,18 +1,19 @@
 #include "exateppabm/output.h"
 
+#include <fmt/core.h>
 #include <cstdio>
 #include <filesystem>
-#include <fmt/core.h>
+#include <memory>
 
-#include "output/OutputFile.h"
-#include "output/TimeSeriesFile.h"
-#include "person.h"
+#include "exateppabm/output/OutputFile.h"
+#include "exateppabm/output/TimeSeriesFile.h"
+#include "exateppabm/person.h"
 
 namespace exateppabm {
 
 namespace output {
 
-// Anonymous namespace for file-scoped variables used to allow data to persist between init, step and exit functions. 
+// Anonymous namespace for file-scoped variables used to allow data to persist between init, step and exit functions.
 // @todo - this will need making thread safe for ensemble use.
 namespace {
 
@@ -22,7 +23,7 @@ std::filesystem::path _outputDirectory;
 // Object representing the time series output file
 std::unique_ptr<TimeSeriesFile> _timeSeriesFile = nullptr;
 
-}  // namespace 
+}  // namespace
 
 /**
  * FLAME GPU init function to prepare for time series data capture throughout the simulation
@@ -34,7 +35,7 @@ FLAMEGPU_INIT_FUNCTION(output_init) {
 }
 
 /**
- * FLAME GPU step function, which executes at the end of each time step. 
+ * FLAME GPU step function, which executes at the end of each time step.
  * Collect relevant data from agents, and store in memory for output do disk at exit.
  */
 FLAMEGPU_STEP_FUNCTION(output_step) {
@@ -59,7 +60,7 @@ FLAMEGPU_STEP_FUNCTION(output_step) {
         std::uint32_t infected = person.getVariable<std::uint32_t>(exateppabm::person::v::INFECTED);
         if (infected) {
             exateppabm::person::Demographic demographicIdx = static_cast<exateppabm::person::Demographic>(person.getVariable<uint8_t>(exateppabm::person::v::DEMOGRAPHIC));
-            switch(demographicIdx) {
+            switch (demographicIdx) {
                 case exateppabm::person::Demographic::AGE_0_9:
                     observations.n_infected_0_9++;
                     break;
@@ -123,6 +124,5 @@ void define(flamegpu::ModelDescription& model, const std::filesystem::path outpu
     model.addExitFunction(output_exit);
 }
 
-}
-
+}  // namespace output
 }  // namespace exateppabm

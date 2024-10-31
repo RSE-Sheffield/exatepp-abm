@@ -1,7 +1,6 @@
 #include "exateppabm/person.h"
 
 namespace exateppabm {
-
 namespace person {
 
 /**
@@ -14,7 +13,7 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
     FLAMEGPU->message_out.setVariable<float>(v::x, FLAMEGPU->getVariable<float>(v::x));
     FLAMEGPU->message_out.setVariable<float>(v::y, FLAMEGPU->getVariable<float>(v::y));
     // FLAMEGPU->message_out.setVariable<float>(v::z, FLAMEGPU->getVariable<float>(v::z));
-    
+
     // And their
     FLAMEGPU->message_out.setVariable<std::uint32_t>(v::
     INFECTED, FLAMEGPU->getVariable<std::uint32_t>(v::INFECTED));
@@ -25,7 +24,7 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
 
 /**
  * Very naive agent interaction for infection spread via "contact"
- * 
+ *
  * Agents iterate messages from their local neighbours.
  * If their neighbour was infected, RNG sample to determine if "i" become infected.
  */
@@ -39,7 +38,7 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
     // Check if I am already infected. Interactions are one way for now.
     std::uint32_t infected = FLAMEGPU->getVariable<std::uint32_t>(v::INFECTED);
 
-    if(!infected){
+    if (!infected) {
         // Agent position
         float agent_x = FLAMEGPU->getVariable<float>(v::x);
         float agent_y = FLAMEGPU->getVariable<float>(v::y);
@@ -50,7 +49,7 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
             // Ignore self messages (can't infect oneself)
             if (message.getVariable<flamegpu::id_t>(message::v::STATUS_ID) != id) {
                 // Check if the other agent is infected
-                if(message.getVariable<std::uint32_t>(v::INFECTED)){
+                if (message.getVariable<std::uint32_t>(v::INFECTED)) {
                     // Roll a dice
                     float r = FLAMEGPU->random.uniform<float>();
                     if (r < inf_p) {
@@ -62,13 +61,13 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
             }
         }
         // Update my status in my global device memory (outside the loop.)
-        if(infected) {
+        if (infected) {
             FLAMEGPU->setVariable<std::uint32_t>(v::INFECTED, infected);
         }
     }
 
 
-    
+
     return flamegpu::ALIVE;
 }
 
@@ -80,7 +79,6 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     // Define an infection probabiltiy. @todo this should be from the config file.
     env.newProperty<float>("INFECTION_PROBABILITY", 0.01f);
 
-
     // Define the agent type
     flamegpu::AgentDescription agent = model.newAgent(exateppabm::person::NAME);
 
@@ -88,13 +86,13 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     agent.newState(exateppabm::person::states::DEFAULT);
 
     // Define variables
-    // @todo - make this an enum / store it elsewhere. 
-    // This has to be 32 bit for vis purposes :(. 
+    // @todo - make this an enum / store it elsewhere.
+    // This has to be 32 bit for vis purposes :(.
     agent.newVariable<std::uint32_t>(exateppabm::person::v::INFECTED, 0);
     // @todo make this an enum, and update uses of it, but flame's templating disagrees?
     agent.newVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC, static_cast<uint8_t>(exateppabm::person::Demographic::AGE_0_9));
 
-    // @todo - temp or vis only? 
+    // @todo - temp or vis only?
     agent.newVariable<float>(exateppabm::person::v::x);
     agent.newVariable<float>(exateppabm::person::v::y);
     agent.newVariable<float>(exateppabm::person::v::z);
@@ -112,9 +110,8 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     statusMessage.newVariable<flamegpu::id_t>(person::message::v::STATUS_ID);
     // Add a variable for the agent's infections status
     statusMessage.newVariable<std::uint32_t>(exateppabm::person::v::INFECTED);
-    // Demographic? 
+    // Demographic?
     statusMessage.newVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC);
-
 
     // Define agent functions
     // emit current status
@@ -141,7 +138,5 @@ void appendLayers(flamegpu::ModelDescription& model) {
     }
 }
 
-
 }  // namespace person
-
 }  // namespace exateppabm

@@ -1,5 +1,7 @@
 #include "exateppabm/input.h"
 
+#include <fmt/core.h>
+
 #include <algorithm>
 #include <exception>
 #include <filesystem>
@@ -8,8 +10,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <fmt/core.h>
 
 namespace exateppabm {
 namespace input {
@@ -53,7 +53,7 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p) {
     // if the path is not an empty path
     if (p != "") {
         // if the provided path is not a file, error
-        if (!std::filesystem::is_regular_file(p)){
+        if (!std::filesystem::is_regular_file(p)) {
             throw std::runtime_error("Bad input path @todo nicer error message");
         }
         // Open the file. Error if it failed to open
@@ -69,58 +69,58 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p) {
 
         // @todo - check the header row is as expected?
         // For now discard the header row
-        if(!std::getline(fs, line)){
+        if (!std::getline(fs, line)) {
             throw std::runtime_error("failed to read the header line @todo nicer error message");
         }
 
         // Read the 2nd line of the file which contains the parameter values
-        if(std::getline(fs, line)){
+        if (std::getline(fs, line)) {
             // Extract values from the line in the expected order, into the params struct
             // Error if any were missing / bad
             // This is brittle.
-            if(!valueFromCSVLine(line, c->rng_seed)) {
+            if (!valueFromCSVLine(line, c->rng_seed)) {
                 throw std::runtime_error("bad value for rng_seed during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->param_id)) {
+            }
+            if (!valueFromCSVLine(line, c->param_id)) {
                 throw std::runtime_error("bad value for param_id during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->duration)) {
+            }
+            if (!valueFromCSVLine(line, c->duration)) {
                 throw std::runtime_error("bad value for duration during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->n_total)) {
+            }
+            if (!valueFromCSVLine(line, c->n_total)) {
                 throw std::runtime_error("bad value for n_total during csv parsing @todo\n");
-            };
+            }
 
-            if(!valueFromCSVLine(line, c->population_0_9)) {
+            if (!valueFromCSVLine(line, c->population_0_9)) {
                 throw std::runtime_error("bad value for population_0_9 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_10_19)) {
+            }
+            if (!valueFromCSVLine(line, c->population_10_19)) {
                 throw std::runtime_error("bad value for population_10_19 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_20_29)) {
+            }
+            if (!valueFromCSVLine(line, c->population_20_29)) {
                 throw std::runtime_error("bad value for population_20_29 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_30_39)) {
+            }
+            if (!valueFromCSVLine(line, c->population_30_39)) {
                 throw std::runtime_error("bad value for population_30_39 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_40_49)) {
+            }
+            if (!valueFromCSVLine(line, c->population_40_49)) {
                 throw std::runtime_error("bad value for population_40_49 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_50_59)) {
+            }
+            if (!valueFromCSVLine(line, c->population_50_59)) {
                 throw std::runtime_error("bad value for population_50_59 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_60_69)) {
+            }
+            if (!valueFromCSVLine(line, c->population_60_69)) {
                 throw std::runtime_error("bad value for population_60_69 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_70_79)) {
+            }
+            if (!valueFromCSVLine(line, c->population_70_79)) {
                 throw std::runtime_error("bad value for population_70_79 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->population_80)) {
+            }
+            if (!valueFromCSVLine(line, c->population_80)) {
                 throw std::runtime_error("bad value for population_80 during csv parsing @todo\n");
-            };
-            if(!valueFromCSVLine(line, c->n_seed_infection)) {
+            }
+            if (!valueFromCSVLine(line, c->n_seed_infection)) {
                 throw std::runtime_error("bad value for n_seed_infection during csv parsing @todo\n");
-            };
+            }
 
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
@@ -159,5 +159,4 @@ void print(exateppabm::input::config config) {
 }
 
 }  // namespace input
-
 }  // namespace exateppabm

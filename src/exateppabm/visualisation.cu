@@ -1,9 +1,9 @@
 #include "exateppabm/visualisation.h"
+#include <fmt/core.h>
 
 #include <memory>
-#include <fmt/core.h>
 #include "flamegpu/flamegpu.h"
-#include "person.h"
+#include "exateppabm/person.h"
 
 namespace exateppabm {
 namespace visualisation {
@@ -27,11 +27,11 @@ void setup(bool enabled, flamegpu::ModelDescription& model, flamegpu::CUDASimula
         return;
     }
     // do nothing if already called
-    if (_modelVis != nullptr){
+    if (_modelVis != nullptr) {
         return;
     }
 
-    // Otherwise we define the visualisation 
+    // Otherwise we define the visualisation
     _modelVis = std::make_unique<flamegpu::visualiser::ModelVis>(simulation.getVisualisation());
     // set sim rate and start paused
     _modelVis->setSimulationSpeed(simulationSpeed);
@@ -45,13 +45,13 @@ void setup(bool enabled, flamegpu::ModelDescription& model, flamegpu::CUDASimula
     constexpr float center = 32 / 2.0f;
     _modelVis->setInitialCameraLocation(center, center, center * 2);
     _modelVis->setInitialCameraTarget(center, center, 0);
-    
+
     _modelVis->setCameraSpeed(0.001f * center);
     _modelVis->setViewClips(0.0001f, 1000);
 
     // Start in orthographic projection?
     constexpr bool ortho = true;
-    if(ortho) {
+    if (ortho) {
         _modelVis->setOrthographic(true);
         _modelVis->setOrthographicZoomModifier(0.05f);
     }

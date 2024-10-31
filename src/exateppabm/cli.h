@@ -51,5 +51,4 @@ void setup(CLI::App& app, std::shared_ptr<exateppabm::cli::params> params);
 void print(const exateppabm::cli::params params);
 
 }  // namespace cli
-
 }  // namespace exateppabm

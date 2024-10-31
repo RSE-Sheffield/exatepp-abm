@@ -11,7 +11,6 @@
 #include "output/TimeSeriesFile.h"
 
 namespace exateppabm {
-
 namespace output {
 
 /**
@@ -26,6 +25,5 @@ namespace output {
  */
 void define(flamegpu::ModelDescription& model, std::filesystem::path outputDirectory);
 
-}
-
+}  // namespace output
 }  // namespace exateppabm

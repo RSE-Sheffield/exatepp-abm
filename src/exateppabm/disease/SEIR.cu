@@ -1,5 +1,6 @@
 #include "exateppabm/disease/SEIR.h"
 
+#include "exateppabm/demographics.h"
 #include "exateppabm/person.h"
 
 namespace exateppabm {
@@ -17,7 +18,7 @@ FLAMEGPU_AGENT_FUNCTION(progressDisease, flamegpu::MessageNone, flamegpu::Messag
     std::uint32_t today = FLAMEGPU->getStepCounter();
 
     // Get a handle to the total_infected_per_demographic macro env property
-    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, person::DEMOGRAPHIC_COUNT>("total_infected_per_demographic");
+    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
 
     // Get the current agents infection status
     auto infectionState = FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
@@ -28,7 +29,7 @@ FLAMEGPU_AGENT_FUNCTION(progressDisease, flamegpu::MessageNone, flamegpu::Messag
     // Ready to change state if today is past the next scheduled state change
     bool readyToChange = today >= dayOfLastStateChange + std::ceil(stateDuration);
     // Get the agent's demographic
-    auto demographic_idx = FLAMEGPU->getVariable<std::uint8_t>(person::v::DEMOGRAPHIC);
+    auto demographic_idx = FLAMEGPU->getVariable<std::uint8_t>(person::v::AGE_DEMOGRAPHIC);
 
     // For each different initial state, change if required and compute the next state's duration.
     if (infectionState == disease::SEIR::InfectionState::Susceptible) {
@@ -82,7 +83,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // Add a macro environment property (Atomically mutable) for tracking the cumulative number of infected individuals in each demographic.
     // @todo - should this be defined in time series instead? as its data collection not behaviour?
-    env.newMacroProperty<std::uint32_t, person::DEMOGRAPHIC_COUNT>("total_infected_per_demographic");
+    env.newMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
 
     // Add a number of model parameters to the environment, initialised with the value from the configuration file
     // @todo - not all of these feel right here / add cosntexpr strings somewhere.

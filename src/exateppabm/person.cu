@@ -1,6 +1,7 @@
 #include "exateppabm/person.h"
 
 #include "exateppabm/disease/SEIR.h"
+#include "exateppabm/demographics.h"
 
 namespace exateppabm {
 namespace person {
@@ -19,7 +20,7 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
     // And their
     FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(v::
     INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE));
-    FLAMEGPU->message_out.setVariable<std::uint8_t>(v::DEMOGRAPHIC, FLAMEGPU->getVariable<std::uint8_t>(v::DEMOGRAPHIC));
+    FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC));
 
     return flamegpu::ALIVE;
 }
@@ -105,7 +106,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // age demographic
     // @todo make this an enum, and update uses of it, but flame's templating disagrees?
-    agent.newVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC, static_cast<uint8_t>(exateppabm::person::Demographic::AGE_0_9));
+    agent.newVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC, exateppabm::demographics::Age::AGE_0_9);
 
     // @todo - temp or vis only?
     agent.newVariable<float>(exateppabm::person::v::x);
@@ -126,7 +127,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     // Add a variable for the agent's infections status
     statusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(exateppabm::person::v::INFECTION_STATE);
     // Demographic?
-    statusMessage.newVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC);
+    statusMessage.newVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC);
 
     // Define agent functions
     // emit current status

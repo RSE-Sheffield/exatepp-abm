@@ -8,6 +8,7 @@
 #include <random>
 #include <vector>
 
+#include "exateppabm/demographics.h"
 #include "exateppabm/disease.h"
 #include "exateppabm/person.h"
 #include "exateppabm/input.h"
@@ -19,7 +20,7 @@ namespace {
 
 // File-scoped array  contianing the number of infected agents per demographic from population initialisation. This needs to be made accessible to a FLAME GPU Init func due to macro environment property limitations.
 
-std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> infectedPerDemographic = {};
+std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
 
 }  // namespace
 
@@ -52,7 +53,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     // @todo - this hardcoded 9 is a bit grim. Maybe enums can help?
     std::uint64_t configDemographicSum = config.population_0_9 + config.population_10_19 + config.population_20_29 + config.population_30_39 + config.population_40_49 + config.population_50_59 + config.population_60_69 + config.population_70_79 + config.population_80;
     // @todo - map might be more readable than an array (incase the underlying class enum values are ever changed to be a different order?)
-    std::array<float, exateppabm::person::DEMOGRAPHIC_COUNT> demographicProbabilties =  {{
+    std::array<float, demographics::AGE_COUNT> demographicProbabilties =  {{
         config.population_0_9 / static_cast<float>(configDemographicSum),
         config.population_10_19 / static_cast<float>(configDemographicSum),
         config.population_20_29 / static_cast<float>(configDemographicSum),
@@ -65,22 +66,22 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     }};
     // Perform an inclusive scan to convert to cumulative probability
     std::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
-    // std::array<std::uint8_t, exateppabm::person::DEMOGRAPHIC_COUNT> allDemographics = {{0, 1, 2, 3, 4, 5, 6, 7, 8}};
-    std::array<exateppabm::person::Demographic, exateppabm::person::DEMOGRAPHIC_COUNT> allDemographics = {{
-        exateppabm::person::Demographic::AGE_0_9,
-        exateppabm::person::Demographic::AGE_10_19,
-        exateppabm::person::Demographic::AGE_20_29,
-        exateppabm::person::Demographic::AGE_30_39,
-        exateppabm::person::Demographic::AGE_40_49,
-        exateppabm::person::Demographic::AGE_50_59,
-        exateppabm::person::Demographic::AGE_60_69,
-        exateppabm::person::Demographic::AGE_70_79,
-        exateppabm::person::Demographic::AGE_80
+    // std::array<std::uint8_t, demographics::AGE_COUNT> allDemographics = {{0, 1, 2, 3, 4, 5, 6, 7, 8}};
+    std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
+        demographics::Age::AGE_0_9,
+        demographics::Age::AGE_10_19,
+        demographics::Age::AGE_20_29,
+        demographics::Age::AGE_30_39,
+        demographics::Age::AGE_40_49,
+        demographics::Age::AGE_50_59,
+        demographics::Age::AGE_60_69,
+        demographics::Age::AGE_70_79,
+        demographics::Age::AGE_80
     }};
 
     // per demo total is not an output in time series.
     // Alternately, we need to initialise the exact number of each age band, not RNG, and just scale it down accordingly. Will look at in "realistic" population generation
-    std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> createdPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    std::array<std::uint64_t, demographics::AGE_COUNT> createdPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
     // reset per demographic count of the number initialised agents in each infection state.
     infectedPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
@@ -96,8 +97,8 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         // @todo - this is a bit grim, enum class aren't as nice as hoped.
         float demo_random = demo_dist(rng);
         // @todo - abstract this into a method.
-        exateppabm::person::Demographic demo = exateppabm::person::Demographic::AGE_0_9;
-        for (std::uint8_t i = 0; i < exateppabm::person::DEMOGRAPHIC_COUNT; i++) {
+        demographics::Age demo = demographics::Age::AGE_0_9;
+        for (std::uint8_t i = 0; i < demographics::AGE_COUNT; i++) {
             if (demo_random < demographicProbabilties[i]) {
                 demo = allDemographics[i];
                 createdPerDemographic[i]++;
@@ -107,7 +108,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
                 break;
             }
         }
-        person.setVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC, static_cast<uint8_t>(demo));
+        person.setVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC, demo);
 
         // Location in 3D space (temp/vis)
         unsigned row = idx / sq_width;
@@ -137,7 +138,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     return pop;
 }
 
-std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> getPerDemographicInitialInfectionCount() {
+std::array<std::uint64_t, demographics::AGE_COUNT> getPerDemographicInitialInfectionCount() {
     return infectedPerDemographic;
 }
 

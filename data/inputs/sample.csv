@@ -1,2 +1,2 @@
-rng_seed,param_id,duration,n_total,population_0_9,population_10_19,population_20_29,population_30_39,population_40_49,population_50_59,population_60_69,population_70_79,population_80,n_seed_infection
-12,0,365,16384,9,8,7,6,5,4,3,2, 1 ,4
+rng_seed,param_id,duration,n_total,population_0_9,population_10_19,population_20_29,population_30_39,population_40_49,population_50_59,population_60_69,population_70_79,population_80,n_seed_infection,p_interaction_susceptible_to_exposed,mean_time_to_infected,sd_time_to_infected,mean_time_to_recovered,sd_time_to_recovered,mean_time_to_susceptible,sd_time_to_susceptible
+12,0,365,16384,4,4,4,4,4,4,3,2,1,8,0.10,3.5,1.0,7.0,1.0,60,5.0

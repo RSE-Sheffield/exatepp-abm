@@ -128,6 +128,27 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->n_seed_infection)) {
                 throw std::runtime_error("bad value for n_seed_infection during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->p_interaction_susceptible_to_exposed)) {
+                throw std::runtime_error("bad value for p_interaction_susceptible_to_exposed during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_time_to_infected)) {
+                throw std::runtime_error("bad value for mean_time_to_infected during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_time_to_infected)) {
+                throw std::runtime_error("bad value for sd_time_to_infected during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_time_to_recovered)) {
+                throw std::runtime_error("bad value for mean_time_to_recovered during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_time_to_recovered)) {
+                throw std::runtime_error("bad value for sd_time_to_recovered during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_time_to_susceptible)) {
+                throw std::runtime_error("bad value for mean_time_to_susceptible during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_time_to_susceptible)) {
+                throw std::runtime_error("bad value for sd_time_to_susceptible during csv parsing @todo\n");
+            }
 
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
@@ -144,20 +165,27 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
 
 void print(exateppabm::input::config config) {
     fmt::print("config {{\n");
-    fmt::print(" rng_seed = {}\n", config.rng_seed);
-    fmt::print(" param_id = {}\n", config.param_id);
-    fmt::print(" duration = {}\n", config.duration);
-    fmt::print(" n_total = {}\n", config.n_total);
-    fmt::print(" population_0_9 = {}\n", config.population_0_9);
-    fmt::print(" population_10_19 = {}\n", config.population_10_19);
-    fmt::print(" population_20_29 = {}\n", config.population_20_29);
-    fmt::print(" population_30_39 = {}\n", config.population_30_39);
-    fmt::print(" population_40_49 = {}\n", config.population_40_49);
-    fmt::print(" population_50_59 = {}\n", config.population_50_59);
-    fmt::print(" population_60_69 = {}\n", config.population_60_69);
-    fmt::print(" population_70_79 = {}\n", config.population_70_79);
-    fmt::print(" population_80 = {}\n", config.population_80);
-    fmt::print(" n_seed_infection = {}\n", config.n_seed_infection);
+    fmt::print("  rng_seed = {}\n", config.rng_seed);
+    fmt::print("  param_id = {}\n", config.param_id);
+    fmt::print("  duration = {}\n", config.duration);
+    fmt::print("  n_total = {}\n", config.n_total);
+    fmt::print("  population_0_9 = {}\n", config.population_0_9);
+    fmt::print("  population_10_19 = {}\n", config.population_10_19);
+    fmt::print("  population_20_29 = {}\n", config.population_20_29);
+    fmt::print("  population_30_39 = {}\n", config.population_30_39);
+    fmt::print("  population_40_49 = {}\n", config.population_40_49);
+    fmt::print("  population_50_59 = {}\n", config.population_50_59);
+    fmt::print("  population_60_69 = {}\n", config.population_60_69);
+    fmt::print("  population_70_79 = {}\n", config.population_70_79);
+    fmt::print("  population_80 = {}\n", config.population_80);
+    fmt::print("  n_seed_infection = {}\n", config.n_seed_infection);
+    fmt::print("  p_interaction_susceptible_to_exposed = {}\n", config.p_interaction_susceptible_to_exposed);
+    fmt::print("  mean_time_to_infected = {}\n", config.mean_time_to_infected);
+    fmt::print("  sd_time_to_infected = {}\n", config.sd_time_to_infected);
+    fmt::print("  mean_time_to_recovered = {}\n", config.mean_time_to_recovered);
+    fmt::print("  sd_time_to_recovered = {}\n", config.sd_time_to_recovered);
+    fmt::print("  mean_time_to_susceptible = {}\n", config.mean_time_to_susceptible);
+    fmt::print("  sd_time_to_susceptible = {}\n", config.sd_time_to_susceptible);
     fmt::print("}}\n");
 }
 

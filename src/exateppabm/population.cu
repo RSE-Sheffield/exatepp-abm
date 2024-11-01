@@ -8,12 +8,20 @@
 #include <random>
 #include <vector>
 
+#include "exateppabm/disease.h"
 #include "exateppabm/person.h"
 #include "exateppabm/input.h"
 
 namespace exateppabm {
-
 namespace population {
+
+namespace {
+
+// File-scoped array  contianing the number of infected agents per demographic from population initialisation. This needs to be made accessible to a FLAME GPU Init func due to macro environment property limitations.
+
+std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> infectedPerDemographic = {};
+
+}  // namespace
 
 std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const float env_width, const float interactionRadius) {
     fmt::print("@todo - validate config inputs when generated agents (pop size, initial infected count etc)\n");
@@ -72,14 +80,17 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
 
     // per demo total is not an output in time series.
     // Alternately, we need to initialise the exact number of each age band, not RNG, and just scale it down accordingly. Will look at in "realistic" population generation
-    std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> createdPerDemographic =  {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> createdPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
+    // reset per demographic count of the number initialised agents in each infection state.
+    infectedPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
+
     std::uniform_real_distribution<float> demo_dist(0.0f, 1.0f);
 
     unsigned idx = 0;
     for (auto person : *pop) {
         // Infections status
-        bool infected = infected_vector.at(idx);
-        person.setVariable<std::uint32_t>(exateppabm::person::v::INFECTION_STATE, infected);
+        disease::SEIR::InfectionState infectionStatus = infected_vector.at(idx) ? disease::SEIR::InfectionState::Infected : disease::SEIR::InfectionState::Susceptible;
+        person.setVariable<disease::SEIR::InfectionStateUnderlyingType>(exateppabm::person::v::INFECTION_STATE, infectionStatus);
 
         // Demographic
         // @todo - this is a bit grim, enum class aren't as nice as hoped.
@@ -90,6 +101,9 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
             if (demo_random < demographicProbabilties[i]) {
                 demo = allDemographics[i];
                 createdPerDemographic[i]++;
+                if (infectionStatus == disease::SEIR::Infected) {
+                    infectedPerDemographic[i]++;
+                }
                 break;
             }
         }
@@ -120,12 +134,11 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     fmt::print("  80+   = {}\n", createdPerDemographic[8]);
     fmt::print("}}\n");
 
-    // @todo - move this.
-    // Also set related environment properties. This does not really belong here, but its best fit (for now).
-    flamegpu::EnvironmentDescription env = model.Environment();
-    // env.setProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
-
     return pop;
+}
+
+std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> getPerDemographicInitialInfectionCount() {
+    return infectedPerDemographic;
 }
 
 }  // namespace population

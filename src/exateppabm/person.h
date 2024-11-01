@@ -1,6 +1,8 @@
 #pragma once
 #include "flamegpu/flamegpu.h"
 
+#include "exateppabm/input.h"
+
 namespace exateppabm {
 namespace person {
 
@@ -25,6 +27,8 @@ __host__ __device__ constexpr char x[] = "x";
 __host__ __device__ constexpr char y[] = "y";
 __host__ __device__ constexpr char z[] = "z";
 __host__ __device__ constexpr char INFECTION_STATE[] = "infection_state";
+__host__ __device__ constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
+__host__ __device__ constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
 __host__ __device__ constexpr char DEMOGRAPHIC[] = "demographic";
 }  // namespace v
 
@@ -65,10 +69,11 @@ constexpr std::uint8_t DEMOGRAPHIC_COUNT = 9;
 /**
  * Define the agent type representing a person in the simulation, mutating the model description object.
  * @param model flamegpu2 model description object to mutate
+ * @param params model parameters from parameters file
  * @param width the width of the 2D space currently used for spatials comms. to be removed once networks added.
  * @param interactionRadius spatial interaction radius for temporary infection spread behaviour. to be removed.
  */
-void define(flamegpu::ModelDescription& model, const float width, const float interactionRadius);
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params, const float width, const float interactionRadius);
 
 /**
  * Add person related functions to the FLAMEGPU 2 layer based control flow.

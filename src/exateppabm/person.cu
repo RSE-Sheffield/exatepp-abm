@@ -32,7 +32,7 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
  */
 FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageNone) {
     // Get the probability of infection
-    float inf_p = FLAMEGPU->environment.getProperty<float>("EXPOSURE_PROBABILITY");
+    float p_s2e = FLAMEGPU->environment.getProperty<float>("p_interaction_susceptible_to_exposed");
 
     // Get my ID to avoid self messages
     const flamegpu::id_t id = FLAMEGPU->getID();
@@ -46,6 +46,9 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
         float agent_y = FLAMEGPU->getVariable<float>(v::y);
         // float agent_z = FLAMEGPU->getVariable<float>(v::z);
 
+        // Variable to store the duration of the exposed phase (if exposed)
+        float stateDuration = 0.f;
+
         // Iterate messages from anyone within my spatial neighbourhood (i.e. cuboid not sphere)
         for (const auto &message : FLAMEGPU->message_in(agent_x, agent_y)) {
             // Ignore self messages (can't infect oneself)
@@ -54,9 +57,13 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
                 if (message.getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE) == disease::SEIR::InfectionState::Infected) {
                     // Roll a dice
                     float r = FLAMEGPU->random.uniform<float>();
-                    if (r < inf_p) {
+                    if (r < p_s2e) {
                         // I have been exposed
                         infectionState = disease::SEIR::InfectionState::Exposed;
+                        // Generate how long until I am infected
+                        float mean = FLAMEGPU->environment.getProperty<float>("mean_time_to_infected");
+                        float sd = FLAMEGPU->environment.getProperty<float>("sd_time_to_infected");
+                        stateDuration = (FLAMEGPU->random.normal<float>() * sd) + mean;
                         // @todo - for now only any exposure matters. This may want to change when quantity of exposure is important?
                         break;
                     }
@@ -66,6 +73,7 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
         // If newly exposed, store the value in global device memory.
         if (infectionState == disease::SEIR::InfectionState::Exposed) {
             FLAMEGPU->setVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE, infectionState);
+            FLAMEGPU->setVariable<float>(person::v::INFECTION_STATE_DURATION, stateDuration);
         }
     }
 
@@ -73,12 +81,12 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
 }
 
 
-void define(flamegpu::ModelDescription& model, const float width, const float interactionRadius) {
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params, const float width, const float interactionRadius) {
     // Define related model environment properties (@todo - abstract these somewhere more appropriate at a later date)
     flamegpu::EnvironmentDescription env = model.Environment();
     env.newProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
     // Define an infection probabiltiy. @todo this should be from the config file.
-    env.newProperty<float>("EXPOSURE_PROBABILITY", 1.0f);
+    env.newProperty<float>("p_interaction_susceptible_to_exposed", params.p_interaction_susceptible_to_exposed);
 
     // Define the agent type
     flamegpu::AgentDescription agent = model.newAgent(exateppabm::person::NAME);
@@ -90,6 +98,10 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     // disease related variables
     // @todo - define this in disease/ call a disease::SEIR::define_person() like method?
     agent.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE, disease::SEIR::Susceptible);
+    // Timestep/day of last state change
+    agent.newVariable<std::uint32_t>(person::v::INFECTION_STATE_CHANGE_DAY, 0);
+    // Time until next state change? Defaults to the simulation duration + 1.
+    agent.newVariable<float>(person::v::INFECTION_STATE_DURATION, params.duration + 1);
 
     // age demographic
     // @todo make this an enum, and update uses of it, but flame's templating disagrees?

@@ -7,7 +7,7 @@ namespace exateppabm {
 
 namespace input {
 
-/** 
+/**
  * Model parameters struct, containing all parameters for a single simulation.
  */
 struct config {
@@ -22,7 +22,7 @@ struct config {
     /**
      * The duration of the simulation in days
      */
-    std::uint32_t duration = 182;
+    std::uint32_t duration = 364;
     /**
      * The population size for the simulation
      */
@@ -67,6 +67,43 @@ struct config {
      * The number of individuals who should be infected at the start of the simulation
      */
     std::uint32_t n_seed_infection = 1;
+    /**
+     * The probability of an interaction between an infected individual and a susceptible individual resulting in an infection, prior to any susceptibility modifier.
+     * This is not directly based on a parameter in the reference model
+     * The default value is arbitrary
+     */
+    float p_interaction_susceptible_to_exposed = 0.2f;
+    /**
+     * The mean time in days from exposed to infected state
+     * Default value is arbitrary
+     * @todo - might be equivalent to mean_time_to_syptoms, depending on how asym works in the reference model.
+     */
+    float mean_time_to_infected = 4;
+    /**
+     * Standard deviation of time from exposed to infected state
+     * Default value is arbitrary
+     */
+    float sd_time_to_infected = 1;
+    /**
+     * The mean time in days from infected to recovered state
+     * Default value is arbitrary
+     */
+    float mean_time_to_recovered = 7;
+    /**
+     * Standard deviation of time from infected to recovered state
+     * Default value is arbitrary
+     */
+    float sd_time_to_recovered = 1;
+    /**
+     * The mean time in days from recovered to susceptible
+     * Default value is arbitrary
+     */
+    float mean_time_to_susceptible = 60;
+    /**
+     * Standard deviation of time from recovered to susceptible
+     * Default value is arbitrary
+     */
+    float sd_time_to_susceptible = 1;
 };
 
 /**
@@ -74,7 +111,7 @@ struct config {
  *
  * @param p path to load parameters from
  * @param lineNumber the line of CSV to use.
- * @return shared pointer to a configuration object 
+ * @return shared pointer to a configuration object
  * @todo - support CSVs with multiple simulations, reading a single row
  */
 std::shared_ptr<exateppabm::input::config> read(std::filesystem::path p, int lineNumber);

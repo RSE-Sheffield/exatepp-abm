@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "flamegpu/flamegpu.h"
+#include "exateppabm/input.h"
 
 namespace exateppabm {
 namespace disease {
@@ -41,8 +42,9 @@ enum InfectionState : InfectionStateUnderlyingType {
  * 
  * @note - this is likely to be refactored several times
  * @param model the FLAME GPU Model description to mutate
+ * @param parameters the model parameters
  */
-void define(flamegpu::ModelDescription& model);
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params);
 
 /**
  * Attach SEIR specific methods to the per-iteration FLAME GPU 2 execution structure

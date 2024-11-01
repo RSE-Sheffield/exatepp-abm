@@ -2,6 +2,9 @@
 
 #include <cstdint>
 
+#include "flamegpu/flamegpu.h"
+#include "exateppabm/input.h"
+
 namespace exateppabm {
 namespace demographics {
 
@@ -30,6 +33,13 @@ enum Age : AgeUnderlyingType {
     AGE_70_79 = 7,
     AGE_80 = 8
 };
+
+/**
+ * Define the agent type representing a person in the simulation, mutating the model description object.
+ * @param model flamegpu2 model description object to mutate
+ * @param params model parameters from parameters file
+ */
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params);
 
 }  // namespace demographics
 }  // namespace exateppabm

@@ -32,11 +32,18 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
  * If their neighbour was infected, RNG sample to determine if "i" become infected.
  */
 FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageNone) {
+    // Get my ID to avoid self messages
+    const flamegpu::id_t id = FLAMEGPU->getID();
+
     // Get the probability of infection
     float p_s2e = FLAMEGPU->environment.getProperty<float>("p_interaction_susceptible_to_exposed");
 
-    // Get my ID to avoid self messages
-    const flamegpu::id_t id = FLAMEGPU->getID();
+    // Get my age demographic
+    auto demographic = FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC);
+    // Get my susceptibility modifier and modify it.
+    float relativeSusceptibility = FLAMEGPU->environment.getProperty<float, demographics::AGE_COUNT>("relative_susceptibility_per_demographic", demographic);
+    // Scale the probability of transmission
+    p_s2e *= relativeSusceptibility;
 
     // Check if the current individual is susceptible to being infected
     auto infectionState = FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE);
@@ -80,7 +87,6 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
 
     return flamegpu::ALIVE;
 }
-
 
 void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params, const float width, const float interactionRadius) {
     // Define related model environment properties (@todo - abstract these somewhere more appropriate at a later date)

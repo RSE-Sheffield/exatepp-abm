@@ -1,2 +1,4 @@
-rng_seed,param_id,duration,n_total,population_0_9,population_10_19,population_20_29,population_30_39,population_40_49,population_50_59,population_60_69,population_70_79,population_80,n_seed_infection,p_interaction_susceptible_to_exposed,mean_time_to_infected,sd_time_to_infected,mean_time_to_recovered,sd_time_to_recovered,mean_time_to_susceptible,sd_time_to_susceptible
-12,0,365,16384,4,4,4,4,4,4,3,2,1,8,0.10,3.5,1.0,7.0,1.0,60,5.0
+rng_seed,param_id,duration,n_total,population_0_9,population_10_19,population_20_29,population_30_39,population_40_49,population_50_59,population_60_69,population_70_79,population_80,n_seed_infection,p_interaction_susceptible_to_exposed,mean_time_to_infected,sd_time_to_infected,mean_time_to_recovered,sd_time_to_recovered,mean_time_to_susceptible,sd_time_to_susceptible,relative_susceptibility_0_9,relative_susceptibility_10_19,relative_susceptibility_20_29,relative_susceptibility_30_39,relative_susceptibility_40_49,relative_susceptibility_50_59,relative_susceptibility_60_69,relative_susceptibility_70_79,relative_susceptibility_80
+12,0,365,16384,4,4,4,4,4,4,3,2,1,8,0.10,3.5,1.0,7.0,1.0,60,5.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0
+12,0,365,16384,4,4,4,4,4,4,4,4,4,8,0.10,3.5,1.0,7.0,1.0,180,5.0,0.0,0.0,0.0,0.01,0.05,0.01,0.05,1.0,5.0
+

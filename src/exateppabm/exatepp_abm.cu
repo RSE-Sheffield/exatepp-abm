@@ -17,6 +17,7 @@
 #include "exateppabm/constants.h"
 #include "exateppabm/typedefs.h"
 #include "exateppabm/cli.h"
+#include "exateppabm/demographics.h"
 #include "exateppabm/disease.h"
 #include "exateppabm/input.h"
 #include "exateppabm/output.h"
@@ -85,6 +86,9 @@ int entrypoint(int argc, char* argv[]) {
     const float env_width = std::ceil(std::sqrt(config->n_total));
     constexpr float interactionRadius = 1.5f;
     exateppabm::person::define(model, *config, env_width, interactionRadius);
+
+    // Define demographic related variables
+    exateppabm::demographics::define(model, *config);
 
     // Define disease related variables and methods
     exateppabm::disease::SEIR::define(model, *config);

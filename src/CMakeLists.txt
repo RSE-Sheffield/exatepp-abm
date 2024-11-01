@@ -31,6 +31,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/util.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/demographics.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu

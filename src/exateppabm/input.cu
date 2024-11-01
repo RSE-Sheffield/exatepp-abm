@@ -74,8 +74,7 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
         }
 
         // Discard rows until the line number is the target line number
-        int currentLine = 1;
-        for (int currentLine = 0; currentLine < lineNumber; currentLine++) {
+        for (int currentLine = 1; currentLine < lineNumber; currentLine++) {
             if (!std::getline(fs, line)) {
                 throw std::runtime_error("Bad parameters file lineNumber @todo nicer errors");
             }

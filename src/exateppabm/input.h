@@ -104,6 +104,51 @@ struct config {
      * Default value is arbitrary
      */
     float sd_time_to_susceptible = 1;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 0_9 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_0_9 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 10_19 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_10_19 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 20_29 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_20_29 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 30_39 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_30_39 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 40_49 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_40_49 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 50_59 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_50_59 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 60_69 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_60_69 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 70_79 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_70_79 = 1.0;
+    /**
+     * Relative susceptibility to infection/transmission for individuals within the 80 age demographic.
+     * Arbitrary default value
+     */
+    float relative_susceptibility_80 = 1.0;
 };
 
 /**

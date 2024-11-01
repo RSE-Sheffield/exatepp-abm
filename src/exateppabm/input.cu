@@ -149,6 +149,33 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->sd_time_to_susceptible)) {
                 throw std::runtime_error("bad value for sd_time_to_susceptible during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_0_9)) {
+                throw std::runtime_error("bad value for relative_susceptibility_0_9 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_10_19)) {
+                throw std::runtime_error("bad value for relative_susceptibility_10_19 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_20_29)) {
+                throw std::runtime_error("bad value for relative_susceptibility_20_29 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_30_39)) {
+                throw std::runtime_error("bad value for relative_susceptibility_30_39 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_40_49)) {
+                throw std::runtime_error("bad value for relative_susceptibility_40_49 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_50_59)) {
+                throw std::runtime_error("bad value for relative_susceptibility_50_59 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_60_69)) {
+                throw std::runtime_error("bad value for relative_susceptibility_60_69 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_70_79)) {
+                throw std::runtime_error("bad value for relative_susceptibility_70_79 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_susceptibility_80)) {
+                throw std::runtime_error("bad value for relative_susceptibility_80 during csv parsing @todo\n");
+            }
 
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
@@ -186,6 +213,15 @@ void print(exateppabm::input::config config) {
     fmt::print("  sd_time_to_recovered = {}\n", config.sd_time_to_recovered);
     fmt::print("  mean_time_to_susceptible = {}\n", config.mean_time_to_susceptible);
     fmt::print("  sd_time_to_susceptible = {}\n", config.sd_time_to_susceptible);
+    fmt::print("  relative_susceptibility_0_9 = {}\n", config.relative_susceptibility_0_9);
+    fmt::print("  relative_susceptibility_10_19 = {}\n", config.relative_susceptibility_10_19);
+    fmt::print("  relative_susceptibility_20_29 = {}\n", config.relative_susceptibility_20_29);
+    fmt::print("  relative_susceptibility_30_39 = {}\n", config.relative_susceptibility_30_39);
+    fmt::print("  relative_susceptibility_40_49 = {}\n", config.relative_susceptibility_40_49);
+    fmt::print("  relative_susceptibility_50_59 = {}\n", config.relative_susceptibility_50_59);
+    fmt::print("  relative_susceptibility_60_69 = {}\n", config.relative_susceptibility_60_69);
+    fmt::print("  relative_susceptibility_70_79 = {}\n", config.relative_susceptibility_70_79);
+    fmt::print("  relative_susceptibility_80 = {}\n", config.relative_susceptibility_80);
     fmt::print("}}\n");
 }
 

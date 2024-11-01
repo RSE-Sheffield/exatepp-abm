@@ -20,6 +20,7 @@ def read_inputs(args):
 def save_or_show(args):
     # Either save the current plot to disk, or show it.
     if (args.output):
+        args.output.parent.mkdir(exist_ok=True)
         plt.savefig(args.output)
     else:
         plt.show()

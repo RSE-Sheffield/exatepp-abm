@@ -17,6 +17,7 @@
 #include "exateppabm/constants.h"
 #include "exateppabm/typedefs.h"
 #include "exateppabm/cli.h"
+#include "exateppabm/disease.h"
 #include "exateppabm/input.h"
 #include "exateppabm/output.h"
 #include "exateppabm/output/PerformanceFile.h"
@@ -80,12 +81,17 @@ int entrypoint(int argc, char* argv[]) {
     constexpr float interactionRadius = 1.5f;
     exateppabm::person::define(model, env_width, interactionRadius);
 
+    // Define disease related variables and methods
+    exateppabm::disease::SEIR::define(model);
+
     // Add init, step and exit functions related to data collection and output. This may want refactoring when multiple output files are supported or collected data becomes more complex.
     exateppabm::output::define(model, cli_params->outputDir);
 
     // Build the model control flow. This will want abstracting more in the future @todo
     // @note - not using the DAG control flow due to bugs encountered in another project when splitting between compilation units.
     exateppabm::person::appendLayers(model);
+    // Add disease progression
+    exateppabm::disease::SEIR::appendLayers(model);
 
     // Construct the Simulation instance from the model.
     flamegpu::CUDASimulation simulation(model);

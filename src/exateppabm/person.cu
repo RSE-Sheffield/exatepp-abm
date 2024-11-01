@@ -1,5 +1,7 @@
 #include "exateppabm/person.h"
 
+#include "exateppabm/disease/SEIR.h"
+
 namespace exateppabm {
 namespace person {
 
@@ -15,8 +17,8 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
     // FLAMEGPU->message_out.setVariable<float>(v::z, FLAMEGPU->getVariable<float>(v::z));
 
     // And their
-    FLAMEGPU->message_out.setVariable<std::uint32_t>(v::
-    INFECTED, FLAMEGPU->getVariable<std::uint32_t>(v::INFECTED));
+    FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(v::
+    INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE));
     FLAMEGPU->message_out.setVariable<std::uint8_t>(v::DEMOGRAPHIC, FLAMEGPU->getVariable<std::uint8_t>(v::DEMOGRAPHIC));
 
     return flamegpu::ALIVE;
@@ -30,15 +32,15 @@ FLAMEGPU_AGENT_FUNCTION(emitStatus, flamegpu::MessageNone, flamegpu::MessageSpat
  */
 FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageNone) {
     // Get the probability of infection
-    float inf_p = FLAMEGPU->environment.getProperty<float>("INFECTION_PROBABILITY");
+    float inf_p = FLAMEGPU->environment.getProperty<float>("EXPOSURE_PROBABILITY");
 
     // Get my ID to avoid self messages
     const flamegpu::id_t id = FLAMEGPU->getID();
 
-    // Check if I am already infected. Interactions are one way for now.
-    std::uint32_t infected = FLAMEGPU->getVariable<std::uint32_t>(v::INFECTED);
+    // Check if the current individual is susceptible to being infected
+    auto infectionState = FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE);
 
-    if (!infected) {
+    if (infectionState == disease::SEIR::Susceptible) {
         // Agent position
         float agent_x = FLAMEGPU->getVariable<float>(v::x);
         float agent_y = FLAMEGPU->getVariable<float>(v::y);
@@ -49,24 +51,23 @@ FLAMEGPU_AGENT_FUNCTION(interact, flamegpu::MessageSpatial2D, flamegpu::MessageN
             // Ignore self messages (can't infect oneself)
             if (message.getVariable<flamegpu::id_t>(message::v::STATUS_ID) != id) {
                 // Check if the other agent is infected
-                if (message.getVariable<std::uint32_t>(v::INFECTED)) {
+                if (message.getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE) == disease::SEIR::InfectionState::Infected) {
                     // Roll a dice
                     float r = FLAMEGPU->random.uniform<float>();
                     if (r < inf_p) {
-                        // I have become infected.
-                        infected = true;
+                        // I have been exposed
+                        infectionState = disease::SEIR::InfectionState::Exposed;
+                        // @todo - for now only any exposure matters. This may want to change when quantity of exposure is important?
                         break;
                     }
                 }
             }
         }
-        // Update my status in my global device memory (outside the loop.)
-        if (infected) {
-            FLAMEGPU->setVariable<std::uint32_t>(v::INFECTED, infected);
+        // If newly exposed, store the value in global device memory.
+        if (infectionState == disease::SEIR::InfectionState::Exposed) {
+            FLAMEGPU->setVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE, infectionState);
         }
     }
-
-
 
     return flamegpu::ALIVE;
 }
@@ -77,7 +78,7 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     flamegpu::EnvironmentDescription env = model.Environment();
     env.newProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
     // Define an infection probabiltiy. @todo this should be from the config file.
-    env.newProperty<float>("INFECTION_PROBABILITY", 0.01f);
+    env.newProperty<float>("EXPOSURE_PROBABILITY", 1.0f);
 
     // Define the agent type
     flamegpu::AgentDescription agent = model.newAgent(exateppabm::person::NAME);
@@ -86,9 +87,11 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     agent.newState(exateppabm::person::states::DEFAULT);
 
     // Define variables
-    // @todo - make this an enum / store it elsewhere.
-    // This has to be 32 bit for vis purposes :(.
-    agent.newVariable<std::uint32_t>(exateppabm::person::v::INFECTED, 0);
+    // disease related variables
+    // @todo - define this in disease/ call a disease::SEIR::define_person() like method?
+    agent.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE, disease::SEIR::Susceptible);
+
+    // age demographic
     // @todo make this an enum, and update uses of it, but flame's templating disagrees?
     agent.newVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC, static_cast<uint8_t>(exateppabm::person::Demographic::AGE_0_9));
 
@@ -109,7 +112,7 @@ void define(flamegpu::ModelDescription& model, const float width, const float in
     // Add the id to the message. x, y, z are implicit
     statusMessage.newVariable<flamegpu::id_t>(person::message::v::STATUS_ID);
     // Add a variable for the agent's infections status
-    statusMessage.newVariable<std::uint32_t>(exateppabm::person::v::INFECTED);
+    statusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(exateppabm::person::v::INFECTION_STATE);
     // Demographic?
     statusMessage.newVariable<std::uint8_t>(exateppabm::person::v::DEMOGRAPHIC);
 

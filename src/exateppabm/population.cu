@@ -79,7 +79,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     for (auto person : *pop) {
         // Infections status
         bool infected = infected_vector.at(idx);
-        person.setVariable<std::uint32_t>(exateppabm::person::v::INFECTED, infected);
+        person.setVariable<std::uint32_t>(exateppabm::person::v::INFECTION_STATE, infected);
 
         // Demographic
         // @todo - this is a bit grim, enum class aren't as nice as hoped.
@@ -123,7 +123,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     // @todo - move this.
     // Also set related environment properties. This does not really belong here, but its best fit (for now).
     flamegpu::EnvironmentDescription env = model.Environment();
-    env.setProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
+    // env.setProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
 
     return pop;
 }

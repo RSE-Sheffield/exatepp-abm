@@ -24,7 +24,7 @@ namespace v {
 __host__ __device__ constexpr char x[] = "x";
 __host__ __device__ constexpr char y[] = "y";
 __host__ __device__ constexpr char z[] = "z";
-__host__ __device__ constexpr char INFECTED[] = "infected";
+__host__ __device__ constexpr char INFECTION_STATE[] = "infection_state";
 __host__ __device__ constexpr char DEMOGRAPHIC[] = "demographic";
 }  // namespace v
 

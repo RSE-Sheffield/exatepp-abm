@@ -28,23 +28,27 @@ bool TimeSeriesFile::write() {
     }
 
     // Print to the file handle
-    fmt::print(_handle, "time,total_n,n_infected,n_infected_0_9,n_infected_10_19,n_infected_20_29,n_infected_30_39,n_infected_40_49,n_infected_50_59,n_infected_60_69,n_infected_70_79,n_infected_80\n");
+    fmt::print(_handle, "time,total_n,total_infected,total_infected_0_9,total_infected_10_19,total_infected_20_29,total_infected_30_39,total_infected_40_49,total_infected_50_59,total_infected_60_69,total_infected_70_79,total_infected_80,n_susceptible,n_exposed,n_infected,n_recovered\n");
     for (const auto& observation : _observations) {
         fmt::print(
             _handle,
-            "{},{},{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             observation.time,
             observation.total_n,
+            observation.total_infected,
+            observation.total_infected_0_9,
+            observation.total_infected_10_19,
+            observation.total_infected_20_29,
+            observation.total_infected_30_39,
+            observation.total_infected_40_49,
+            observation.total_infected_50_59,
+            observation.total_infected_60_69,
+            observation.total_infected_70_79,
+            observation.total_infected_80,
+            observation.n_susceptible,
+            observation.n_exposed,
             observation.n_infected,
-            observation.n_infected_0_9,
-            observation.n_infected_10_19,
-            observation.n_infected_20_29,
-            observation.n_infected_30_39,
-            observation.n_infected_40_49,
-            observation.n_infected_50_59,
-            observation.n_infected_60_69,
-            observation.n_infected_70_79,
-            observation.n_infected_80);
+            observation.n_recovered);
     }
 
     fmt::print("Timeseries data written to {}\n", std::filesystem::absolute(this->_filepath).c_str());

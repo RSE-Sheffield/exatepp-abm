@@ -16,6 +16,8 @@ set(BINARY_NAME "${PROJECT_NAME}")
 SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/constants.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
@@ -28,6 +30,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/util.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu

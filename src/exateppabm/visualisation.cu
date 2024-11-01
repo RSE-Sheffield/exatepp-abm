@@ -4,6 +4,7 @@
 #include <memory>
 #include "flamegpu/flamegpu.h"
 #include "exateppabm/person.h"
+#include "exateppabm/disease/SEIR.h"
 
 namespace exateppabm {
 namespace visualisation {
@@ -69,10 +70,11 @@ void setup(bool enabled, flamegpu::ModelDescription& model, flamegpu::CUDASimula
     // ));
 
     auto infectedPalette = flamegpu::visualiser::DiscreteColor<uint32_t>(exateppabm::person::v::INFECTED, flamegpu::visualiser::Color{ "#0000FF" });
-    infectedPalette[0] = "#0000FF";
-    infectedPalette[1] = "#FF0000";
+    infectedPalette[disease::SEIR::InfectionState::Susceptible] = "#0000FF";
+    infectedPalette[disease::SEIR::InfectionState::Exposed] = "#00FF00";
+    infectedPalette[disease::SEIR::InfectionState::Infected] = "#FF000000";
+    infectedPalette[disease::SEIR::InfectionState::Recovered] = "#FFFFFFF";
     personVis.setColor(infectedPalette);
-
 
     // Enable the visualisation
     _modelVis->activate();

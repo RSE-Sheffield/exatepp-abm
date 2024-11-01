@@ -60,45 +60,61 @@ class TimeSeriesFile : public OutputFile {
          */
         std::uint64_t total_n = 0;
         /**
-         * The total number of currently infected individuals
+         * Cumulative infected
+         */
+        std::uint64_t total_infected = 0;
+        /**
+         * Cumulative infected in the 0_9 age demographic
+         */
+        std::uint64_t total_infected_0_9 = 0;
+        /**
+         * Cumulative infected in the 10_19 age demographic
+         */
+        std::uint64_t total_infected_10_19 = 0;
+        /**
+         * Cumulative infected in the 20_29 age demographic
+         */
+        std::uint64_t total_infected_20_29 = 0;
+        /**
+         * Cumulative infected in the 30_39 age demographic
+         */
+        std::uint64_t total_infected_30_39 = 0;
+        /**
+         * Cumulative infected in the 40_49 age demographic
+         */
+        std::uint64_t total_infected_40_49 = 0;
+        /**
+         * Cumulative infected in the 50_59 age demographic
+         */
+        std::uint64_t total_infected_50_59 = 0;
+        /**
+         * Cumulative infected in the 60_69 age demographic
+         */
+        std::uint64_t total_infected_60_69 = 0;
+        /**
+         * Cumulative infected in the 70_79 age demographic
+         */
+        std::uint64_t total_infected_70_79 = 0;
+        /**
+         * Cumulative infected in the 80+ age demographic
+         */
+        std::uint64_t total_infected_80 = 0;
+        /**
+         * Current number of susceptible individuals
+         */
+        std::uint64_t n_susceptible = 0;
+        /**
+         * Current number of exposed individuals
+         */
+        std::uint64_t n_exposed = 0;
+        /**
+         * Current number of infected individuals
          */
         std::uint64_t n_infected = 0;
         /**
-         * The number of currently infected individuals in the 0_9 age demographic
+         * Current number of recovered individuals (currently once recovered can no longer be infected)
          */
-        std::uint64_t n_infected_0_9 = 0;
-        /**
-         * The number of currently infected individuals in the 10_19 age demographic
-         */
-        std::uint64_t n_infected_10_19 = 0;
-        /**
-         * The number of currently infected individuals in the 20_29 age demographic
-         */
-        std::uint64_t n_infected_20_29 = 0;
-        /**
-         * The number of currently infected individuals in the 30_39 age demographic
-         */
-        std::uint64_t n_infected_30_39 = 0;
-        /**
-         * The number of currently infected individuals in the 40_49 age demographic
-         */
-        std::uint64_t n_infected_40_49 = 0;
-        /**
-         * The number of currently infected individuals in the 50_59 age demographic
-         */
-        std::uint64_t n_infected_50_59 = 0;
-        /**
-         * The number of currently infected individuals in the 60_69 age demographic
-         */
-        std::uint64_t n_infected_60_69 = 0;
-        /**
-         * The number of currently infected individuals in the 70_79 age demographic
-         */
-        std::uint64_t n_infected_70_79 = 0;
-        /**
-         * The number of currently infected individuals in the 80+ age demographic
-         */
-        std::uint64_t n_infected_80 = 0;
+        std::uint64_t n_recovered = 0;
     };
 
  private:

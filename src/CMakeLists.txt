@@ -16,6 +16,7 @@ set(BINARY_NAME "${PROJECT_NAME}")
 SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/constants.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/demographics.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h

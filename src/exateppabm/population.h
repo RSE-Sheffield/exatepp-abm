@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include "flamegpu/flamegpu.h"
+#include "exateppabm/demographics.h"
 #include "exateppabm/person.h"
 #include "exateppabm/input.h"
 
@@ -27,7 +28,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
  * @note - 9 element std array, don't mind this creating a copy for a one time use method.
  * @return std::array containing the number of each demographic which were initialised to be infected
  */
-std::array<std::uint64_t, exateppabm::person::DEMOGRAPHIC_COUNT> getPerDemographicInitialInfectionCount();
+std::array<std::uint64_t, exateppabm::demographics::AGE_COUNT> getPerDemographicInitialInfectionCount();
 
 
 }  // namespace population

@@ -9,6 +9,7 @@
 #include "exateppabm/output/TimeSeriesFile.h"
 #include "exateppabm/person.h"
 #include "exateppabm/population.h"
+#include "exateppabm/demographics.h"
 #include "exateppabm/disease.h"
 
 namespace exateppabm {
@@ -35,7 +36,7 @@ FLAMEGPU_INIT_FUNCTION(output_init) {
     // (re) initialise the time series file data structure with preallocated room for the number of steps.
     _timeSeriesFile->resetObservations(FLAMEGPU->getSimulationConfig().steps);
     // Set the initial number of infected individuals per age demographic. @todo. Possibly move generation into an init method instead and do it their instead?
-    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, person::DEMOGRAPHIC_COUNT>("total_infected_per_demographic");
+    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
     const auto hostInitialInfectedPerDemo = exateppabm::population::getPerDemographicInitialInfectionCount();
     for (std::uint8_t i = 0; i < hostInitialInfectedPerDemo.size(); i++) {
         totalInfectedPerDemographic[i] = hostInitialInfectedPerDemo[i];
@@ -67,21 +68,21 @@ FLAMEGPU_STEP_FUNCTION(output_step) {
     observations.n_recovered = personAgent.count<std::uint32_t>(exateppabm::person::v::INFECTION_STATE, exateppabm::disease::SEIR::InfectionState::Recovered);
 
     // Get the per-demographic count of cumulative infections from the macro environment property
-    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, person::DEMOGRAPHIC_COUNT>("total_infected_per_demographic");
+    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
 
-    observations.total_infected_0_9 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_0_9)];
-    observations.total_infected_10_19 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_10_19)];
-    observations.total_infected_20_29 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_20_29)];
-    observations.total_infected_30_39 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_30_39)];
-    observations.total_infected_40_49 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_40_49)];
-    observations.total_infected_50_59 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_50_59)];
-    observations.total_infected_60_69 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_60_69)];
-    observations.total_infected_70_79 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_70_79)];
-    observations.total_infected_80 = totalInfectedPerDemographic[static_cast<uint8_t>(person::Demographic::AGE_80)];
+    observations.total_infected_0_9 = totalInfectedPerDemographic[demographics::Age::AGE_0_9];
+    observations.total_infected_10_19 = totalInfectedPerDemographic[demographics::Age::AGE_10_19];
+    observations.total_infected_20_29 = totalInfectedPerDemographic[demographics::Age::AGE_20_29];
+    observations.total_infected_30_39 = totalInfectedPerDemographic[demographics::Age::AGE_30_39];
+    observations.total_infected_40_49 = totalInfectedPerDemographic[demographics::Age::AGE_40_49];
+    observations.total_infected_50_59 = totalInfectedPerDemographic[demographics::Age::AGE_50_59];
+    observations.total_infected_60_69 = totalInfectedPerDemographic[demographics::Age::AGE_60_69];
+    observations.total_infected_70_79 = totalInfectedPerDemographic[demographics::Age::AGE_70_79];
+    observations.total_infected_80 = totalInfectedPerDemographic[demographics::Age::AGE_80];
 
     // Sum the above to find the generic count.
     observations.total_infected = 0;
-    for (uint8_t i = 0; i < person::DEMOGRAPHIC_COUNT; i++) {
+    for (uint8_t i = 0; i < demographics::AGE_COUNT; i++) {
         observations.total_infected += totalInfectedPerDemographic[i];
     }
 

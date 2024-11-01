@@ -29,7 +29,7 @@ __host__ __device__ constexpr char z[] = "z";
 __host__ __device__ constexpr char INFECTION_STATE[] = "infection_state";
 __host__ __device__ constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
 __host__ __device__ constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
-__host__ __device__ constexpr char DEMOGRAPHIC[] = "demographic";
+__host__ __device__ constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
 }  // namespace v
 
 /**
@@ -45,26 +45,7 @@ __host__ __device__ constexpr char STATUS_ID[] = "id";
 }  // namespace v
 }  // namespace message
 
-/**
- * Enum class for age demographics for a person.
- * @todo - Switch to a non-class enum to enable use in flamegpu agent variables without casting.
- * @todo - move to it's own file? 
- */
-enum class Demographic : std::uint8_t {
-    AGE_0_9 = 0,
-    AGE_10_19 = 1,
-    AGE_20_29 = 2,
-    AGE_30_39 = 3,
-    AGE_40_49 = 4,
-    AGE_50_59 = 5,
-    AGE_60_69 = 6,
-    AGE_70_79 = 7,
-    AGE_80 = 8,
-};
-/**
- * The number of person age demographics in the enum (C++ enums are not enumerable)
- */
-constexpr std::uint8_t DEMOGRAPHIC_COUNT = 9;
+
 
 /**
  * Define the agent type representing a person in the simulation, mutating the model description object.

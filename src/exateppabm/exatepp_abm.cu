@@ -79,10 +79,10 @@ int entrypoint(int argc, char* argv[]) {
     // Add the person agent to the model description
     const float env_width = std::ceil(std::sqrt(config->n_total));
     constexpr float interactionRadius = 1.5f;
-    exateppabm::person::define(model, env_width, interactionRadius);
+    exateppabm::person::define(model, *config, env_width, interactionRadius);
 
     // Define disease related variables and methods
-    exateppabm::disease::SEIR::define(model);
+    exateppabm::disease::SEIR::define(model, *config);
 
     // Add init, step and exit functions related to data collection and output. This may want refactoring when multiple output files are supported or collected data becomes more complex.
     exateppabm::output::define(model, cli_params->outputDir);

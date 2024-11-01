@@ -8,6 +8,7 @@
 #include "exateppabm/output/OutputFile.h"
 #include "exateppabm/output/TimeSeriesFile.h"
 #include "exateppabm/person.h"
+#include "exateppabm/population.h"
 #include "exateppabm/disease.h"
 
 namespace exateppabm {
@@ -34,6 +35,11 @@ FLAMEGPU_INIT_FUNCTION(output_init) {
     // (re) initialise the time series file data structure with preallocated room for the number of steps.
     _timeSeriesFile->resetObservations(FLAMEGPU->getSimulationConfig().steps);
     // Set the initial number of infected individuals per age demographic. @todo. Possibly move generation into an init method instead and do it their instead?
+    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, person::DEMOGRAPHIC_COUNT>("total_infected_per_demographic");
+    const auto hostInitialInfectedPerDemo = exateppabm::population::getPerDemographicInitialInfectionCount();
+    for (std::uint8_t i = 0; i < hostInitialInfectedPerDemo.size(); i++) {
+        totalInfectedPerDemographic[i] = hostInitialInfectedPerDemo[i];
+    }
 }
 
 /**

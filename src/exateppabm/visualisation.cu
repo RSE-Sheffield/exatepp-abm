@@ -69,11 +69,11 @@ void setup(bool enabled, flamegpu::ModelDescription& model, flamegpu::CUDASimula
     //     flamegpu::visualiser::Stock::Colors::WHITE
     // ));
 
-    auto infectedPalette = flamegpu::visualiser::DiscreteColor<uint32_t>(exateppabm::person::v::INFECTED, flamegpu::visualiser::Color{ "#0000FF" });
+    auto infectedPalette = flamegpu::visualiser::DiscreteColor<exateppabm::disease::SEIR::InfectionStateUnderlyingType>(exateppabm::person::v::INFECTION_STATE, flamegpu::visualiser::Color{ "#0000FF" });
     infectedPalette[disease::SEIR::InfectionState::Susceptible] = "#0000FF";
     infectedPalette[disease::SEIR::InfectionState::Exposed] = "#00FF00";
-    infectedPalette[disease::SEIR::InfectionState::Infected] = "#FF000000";
-    infectedPalette[disease::SEIR::InfectionState::Recovered] = "#FFFFFFF";
+    infectedPalette[disease::SEIR::InfectionState::Infected] = "#FF0000";
+    infectedPalette[disease::SEIR::InfectionState::Recovered] = "#FFFFFF";
     personVis.setColor(infectedPalette);
 
     // Enable the visualisation

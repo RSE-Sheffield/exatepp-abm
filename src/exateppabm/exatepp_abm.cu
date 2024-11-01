@@ -43,9 +43,10 @@ int entrypoint(int argc, char* argv[]) {
         return app.exit(e);
     }
 
-    // @temp - print the cli
-    exateppabm::cli::print(*cli_params);
-
+    // print the cli
+    if (cli_params->verbosity > 0) {
+        exateppabm::cli::print(*cli_params);
+    }
     // Prep for performance data capture (this is the earliest we know the output location for now)
     auto perfFile = exateppabm::output::PerformanceFile(cli_params->outputDir);
     perfFile.timers.totalProgram.start();
@@ -54,8 +55,12 @@ int entrypoint(int argc, char* argv[]) {
     // Parse the provided path to an input file
     auto config = exateppabm::input::read(cli_params->inputParamFile, cli_params->inputParamLine);
 
-    // @temp - print the parsed config.
-    exateppabm::input::print(*config);
+    // print the parsed config.
+    if (cli_params->verbosity > 0) {
+        exateppabm::input::print(*config);
+    } else {
+        fmt::print("{} day simulation with {}/{} individuals infected at t0\n", config->duration, config->n_seed_infection, config->n_total);
+    }
 
     perfFile.timers.configParsing.stop();
     perfFile.timers.preSimulate.start();
@@ -115,7 +120,7 @@ int entrypoint(int argc, char* argv[]) {
     // Generate the population of agents.
     // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
     const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
-    auto personPopulation = exateppabm::population::generate(model, *config, env_width, interactionRadius);
+    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0, env_width, interactionRadius);
     if (personPopulation == nullptr) {
         throw std::runtime_error("@todo - bad population generation function.");
     }

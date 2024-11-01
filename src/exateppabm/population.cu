@@ -24,7 +24,7 @@ std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
 
 }  // namespace
 
-std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const float env_width, const float interactionRadius) {
+std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const bool verbose, const float env_width, const float interactionRadius) {
     fmt::print("@todo - validate config inputs when generated agents (pop size, initial infected count etc)\n");
 
     // @todo - assert that the requested initial population is non zero.
@@ -66,7 +66,6 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     }};
     // Perform an inclusive scan to convert to cumulative probability
     std::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
-    // std::array<std::uint8_t, demographics::AGE_COUNT> allDemographics = {{0, 1, 2, 3, 4, 5, 6, 7, 8}};
     std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
         demographics::Age::AGE_0_9,
         demographics::Age::AGE_10_19,
@@ -98,7 +97,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         float demo_random = demo_dist(rng);
         // @todo - abstract this into a method.
         demographics::Age demo = demographics::Age::AGE_0_9;
-        for (std::uint8_t i = 0; i < demographics::AGE_COUNT; i++) {
+        for (demographics::AgeUnderlyingType i = 0; i < demographics::AGE_COUNT; i++) {
             if (demo_random < demographicProbabilties[i]) {
                 demo = allDemographics[i];
                 createdPerDemographic[i]++;
@@ -121,19 +120,21 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         ++idx;
     }
 
-    // Print a summary of population creation for now.
-    fmt::print("Created {} people with {} infected.\n", config.n_total, config.n_seed_infection);
-    fmt::print("Demographics {{\n");
-    fmt::print("   0- 9 = {}\n", createdPerDemographic[0]);
-    fmt::print("  10-19 = {}\n", createdPerDemographic[1]);
-    fmt::print("  20-29 = {}\n", createdPerDemographic[2]);
-    fmt::print("  30-39 = {}\n", createdPerDemographic[3]);
-    fmt::print("  40-49 = {}\n", createdPerDemographic[4]);
-    fmt::print("  50-59 = {}\n", createdPerDemographic[5]);
-    fmt::print("  60-69 = {}\n", createdPerDemographic[6]);
-    fmt::print("  70-79 = {}\n", createdPerDemographic[7]);
-    fmt::print("  80+   = {}\n", createdPerDemographic[8]);
-    fmt::print("}}\n");
+    if (verbose) {
+        // Print a summary of population creation for now.
+        fmt::print("Created {} people with {} infected.\n", config.n_total, config.n_seed_infection);
+        fmt::print("Demographics {{\n");
+        fmt::print("   0- 9 = {}\n", createdPerDemographic[0]);
+        fmt::print("  10-19 = {}\n", createdPerDemographic[1]);
+        fmt::print("  20-29 = {}\n", createdPerDemographic[2]);
+        fmt::print("  30-39 = {}\n", createdPerDemographic[3]);
+        fmt::print("  40-49 = {}\n", createdPerDemographic[4]);
+        fmt::print("  50-59 = {}\n", createdPerDemographic[5]);
+        fmt::print("  60-69 = {}\n", createdPerDemographic[6]);
+        fmt::print("  70-79 = {}\n", createdPerDemographic[7]);
+        fmt::print("  80+   = {}\n", createdPerDemographic[8]);
+        fmt::print("}}\n");
+    }
 
     return pop;
 }

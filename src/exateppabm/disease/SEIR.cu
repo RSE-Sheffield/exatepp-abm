@@ -29,7 +29,7 @@ FLAMEGPU_AGENT_FUNCTION(progressDisease, flamegpu::MessageNone, flamegpu::Messag
     // Ready to change state if today is past the next scheduled state change
     bool readyToChange = today >= dayOfLastStateChange + std::ceil(stateDuration);
     // Get the agent's demographic
-    auto demographic_idx = FLAMEGPU->getVariable<std::uint8_t>(person::v::AGE_DEMOGRAPHIC);
+    auto demographic_idx = FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
 
     // For each different initial state, change if required and compute the next state's duration.
     if (infectionState == disease::SEIR::InfectionState::Susceptible) {

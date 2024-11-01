@@ -38,7 +38,7 @@ FLAMEGPU_INIT_FUNCTION(output_init) {
     // Set the initial number of infected individuals per age demographic. @todo. Possibly move generation into an init method instead and do it their instead?
     auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
     const auto hostInitialInfectedPerDemo = exateppabm::population::getPerDemographicInitialInfectionCount();
-    for (std::uint8_t i = 0; i < hostInitialInfectedPerDemo.size(); i++) {
+    for (demographics::AgeUnderlyingType i = 0; i < hostInitialInfectedPerDemo.size(); i++) {
         totalInfectedPerDemographic[i] = hostInitialInfectedPerDemo[i];
     }
 }
@@ -82,7 +82,7 @@ FLAMEGPU_STEP_FUNCTION(output_step) {
 
     // Sum the above to find the generic count.
     observations.total_infected = 0;
-    for (uint8_t i = 0; i < demographics::AGE_COUNT; i++) {
+    for (demographics::AgeUnderlyingType i = 0; i < demographics::AGE_COUNT; i++) {
         observations.total_infected += totalInfectedPerDemographic[i];
     }
 

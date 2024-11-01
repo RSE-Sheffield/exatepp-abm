@@ -70,7 +70,7 @@ class PerformanceFile : public OutputFile {
         /**
          * device memory total in bytes
          */
-        unsigned int device_memory = 0u;
+        size_t device_memory = 0u;
         /**
          * Absolute path to input parameters file
          */

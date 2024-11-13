@@ -39,7 +39,8 @@ class OutputFile {
      * Open the file handle for writing
      */
     void open() {
-        // @todo - validate the file is not a directory first? and make any parent dirs?
+        // @todo - validate the file is not a directory first? and make any parent dirs? Handle any exceptions nicely?
+        std::filesystem::create_directories(this->getFilepath().parent_path());
         this->_handle = std::fopen(this->getFilepath().c_str(), "w");
     }
 

@@ -25,6 +25,91 @@ std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
 
 }  // namespace
 
+// @todo - add to header, refactor a bit.
+// @note only generates up to 6 members per household, no accounting for 6+
+// Calculate the number of each household size to generate, based on the input distributions
+template <typename T>
+std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, const bool verbose, std::mt19937_64 & rng) {
+    // Initialise vector with each config household size
+    std::vector<std::uint64_t> countPerSize = {{config.household_size_1, config.household_size_2, config.household_size_3, config.household_size_4, config.household_size_5, config.household_size_6}};
+    // get the sum, to find relative proportions
+    std::uint64_t sumConfigHouseholdSizes = std::reduce(countPerSize.begin(), countPerSize.end());
+    // Get the number of people in each household band for the reference size
+    // Find the number of people that the reference household sizes can account for
+    std::vector<std::uint64_t> peoplePerHouseSize = countPerSize;
+    for (std::size_t idx = 0; idx < peoplePerHouseSize.size(); idx++) {
+        peoplePerHouseSize[idx] = (idx + 1) * peoplePerHouseSize[idx];
+    }
+    std::uint64_t sumConfigPeoplePerHouseSize = std::reduce(peoplePerHouseSize.begin(), peoplePerHouseSize.end());
+    double configMeanPeoplePerHouseSize = sumConfigPeoplePerHouseSize / static_cast<double>(sumConfigHouseholdSizes);
+
+    if (verbose) {
+        fmt::print("reference households (total {}) {{\n", sumConfigHouseholdSizes);
+        for (const auto & v : countPerSize) {
+            fmt::print("  {},\n", v);
+        }
+        fmt::print("}}\n");
+        fmt::print("reference people per household size (total {}) {{\n", sumConfigPeoplePerHouseSize);
+        for (const auto & v : peoplePerHouseSize) {
+            fmt::print("  {},\n", v);
+        }
+        fmt::print("}}\n");
+        fmt::print("reference mean household size {}\n", configMeanPeoplePerHouseSize);
+    }
+
+    // Build a list of household sizes, by random sampling from a uniform distribution using probabilities from the reference house size counts.
+    std::vector<double> householdSizeProbability(countPerSize.size());
+    for (std::size_t idx = 0; idx < householdSizeProbability.size(); idx++) {
+        householdSizeProbability[idx] = countPerSize[idx] / static_cast<double>(sumConfigHouseholdSizes);
+    }
+    // Perform an inclusive scan to convert to cumulative probability
+    std::inclusive_scan(householdSizeProbability.begin(), householdSizeProbability.end(), householdSizeProbability.begin());
+
+    std::uniform_real_distribution<double> dist(0.0, 1.0);
+
+    std::int64_t remainingPeople = static_cast<std::int64_t>(config.n_total);
+    // estimate the number of houses
+    std::uint64_t householdCountEstimate = static_cast<std::uint64_t>(std::ceil(remainingPeople / static_cast<double>(configMeanPeoplePerHouseSize)));
+    // declare the array, and pre-allocate enough memory for the estimate
+    std::vector<T> peoplePerHouse = {};
+    peoplePerHouse.reserve(householdCountEstimate);
+
+    // create enough households for the whole population using the uniform distribution and cumulative probability vector. Ensure the last household is not too large.
+    while (remainingPeople > 0) {
+        double r = dist(rng);
+        for (std::size_t idx = 0; idx < householdSizeProbability.size(); idx++) {
+            if (r < householdSizeProbability[idx]) {
+                T houseSize = static_cast<T>(idx + 1) <= remainingPeople ? static_cast<T>(idx + 1) : remainingPeople;
+                peoplePerHouse.push_back(houseSize);
+                remainingPeople -= houseSize;
+                break;
+            }
+        }
+    }
+    // potentially shrink the array, in case the reservation was too large
+    peoplePerHouse.shrink_to_fit();
+
+    if (verbose) {
+        // Get the count of created per house size and print it.
+        std::vector<std::uint64_t> generatedHouseSizeDistribution(countPerSize.size());
+        for (const auto& houseSize : peoplePerHouse) {
+            generatedHouseSizeDistribution[houseSize-1]++;
+        }
+        fmt::print("generated households per household size (total {}) {{\n", peoplePerHouse.size());
+        for (const auto & v : generatedHouseSizeDistribution) {
+            fmt::print("  {},\n", v);
+        }
+        fmt::print("}}\n");
+        // Sum the number of people per household
+        std::uint64_t sumPeoplePerHouse = std::reduce(peoplePerHouse.begin(), peoplePerHouse.end(), 0ull);
+        // Check the mean still agrees.
+        double generatedMeanPeoplePerHouseSize = sumPeoplePerHouse / static_cast<double>(peoplePerHouse.size());
+        fmt::print("generated mean household size {}\n", generatedMeanPeoplePerHouseSize);
+    }
+    return peoplePerHouse;
+}
+
+
 std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const bool verbose, const float env_width, const float interactionRadius) {
     fmt::print("@todo - validate config inputs when generated agents (pop size, initial infected count etc)\n");
 
@@ -127,6 +212,12 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         }
         person.setVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC, demo);
 
+        // Household assignment
+        std::uint32_t householdIdx = householdIndexPerPerson[idx];
+        person.setVariable<std::uint32_t>(person::v::HOUSEHOLD_IDX, householdIdx);
+        std::uint8_t householdSize = householdSizes[householdIdx];
+        person.setVariable<std::uint8_t>(person::v::HOUSEHOLD_SIZE, householdSize);
+
         // Location in 3D space (temp/vis)
         unsigned row = idx / sq_width;
         unsigned col = idx % sq_width;
@@ -141,6 +232,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     if (verbose) {
         // Print a summary of population creation for now.
         fmt::print("Created {} people with {} infected.\n", config.n_total, config.n_seed_infection);
+        fmt::print("Households: {}\n", householdSizes.size());
         fmt::print("Demographics {{\n");
         fmt::print("   0- 9 = {}\n", createdPerDemographic[0]);
         fmt::print("  10-19 = {}\n", createdPerDemographic[1]);

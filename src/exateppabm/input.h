@@ -28,6 +28,10 @@ struct config {
      */
     std::uint32_t n_total = 1024;
     /**
+     * The number of individuals who should be infected at the start of the simulation
+     */
+    std::uint32_t n_seed_infection = 1;
+    /**
      * Reference size for the number of individuals within the 0_9 age demographic, used to compute ratios for population initialisation
      */
     std::uint64_t population_0_9 = 1;
@@ -64,9 +68,29 @@ struct config {
      */
     std::uint64_t population_80 = 1;
     /**
-     * The number of individuals who should be infected at the start of the simulation
+     * Reference size for the number of households with 1 person, used for household generation
      */
-    std::uint32_t n_seed_infection = 1;
+    std::uint64_t household_size_1 = 1;
+    /**
+     * Reference size for the number of households with 2 people, used for household generation
+     */
+    std::uint64_t household_size_2 = 1;
+    /**
+     * Reference size for the number of households with 3 people, used for household generation
+     */
+    std::uint64_t household_size_3 = 1;
+    /**
+     * Reference size for the number of households with 4 people, used for household generation
+     */
+    std::uint64_t household_size_4 = 1;
+    /**
+     * Reference size for the number of households with 5 people, used for household generation
+     */
+    std::uint64_t household_size_5 = 1;
+    /**
+     * Reference size for the number of households with 6+ people, used for household generation. 6+ chosen as largest band based on ONS estimates https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbyhouseholdsizeregionsofenglandandgbconstituentcountries
+     */
+    std::uint64_t household_size_6 = 1;
     /**
      * The probability of an interaction between an infected individual and a susceptible individual resulting in an infection, prior to any susceptibility modifier.
      * This is not directly based on a parameter in the reference model

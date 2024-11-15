@@ -24,20 +24,26 @@ bool valueFromCSVLine(std::string& line, T& value) {
     // trim whitespace
     line.erase(0, line.find_first_not_of(' '));
     line.erase(line.find_last_not_of(' ') + 1);
-    std::istringstream iss(line);
+
+    // If the line is empty, do nothing?
+    if (line.length() == 0) {
+        return false;
+    }
+
+    // Find the first comma
+    size_t pos = line.find(',');
+    std::string valueString = pos != std::string::npos ? line.substr(0, pos) : line;
+    // Shorten line.
+    line = pos != std::string::npos ? line.substr(pos + 1) : "";
+
+    // Create an istring stream and attempt to parse into value
+    std::istringstream iss(valueString);
     if (iss >> value) {
-        char comma;
-        iss >> comma;
-        if (comma != ',') {
-            // If the next character is not a comma, we've reached the end
-            line.clear();
-            return true;
-        }
-        // Remove the consumed part from the string
-        size_t pos = line.find(',');
-        line = line.substr(pos + 1);
+        // success
         return true;
     } else {
+        // failure
+        // @todo - warn about the value not matching the type here? outside has better info though for the error message
         return false;
     }
 }
@@ -97,7 +103,9 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->n_total)) {
                 throw std::runtime_error("bad value for n_total during csv parsing @todo\n");
             }
-
+            if (!valueFromCSVLine(line, c->n_seed_infection)) {
+                throw std::runtime_error("bad value for n_seed_infection during csv parsing @todo\n");
+            }
             if (!valueFromCSVLine(line, c->population_0_9)) {
                 throw std::runtime_error("bad value for population_0_9 during csv parsing @todo\n");
             }
@@ -125,8 +133,23 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->population_80)) {
                 throw std::runtime_error("bad value for population_80 during csv parsing @todo\n");
             }
-            if (!valueFromCSVLine(line, c->n_seed_infection)) {
-                throw std::runtime_error("bad value for n_seed_infection during csv parsing @todo\n");
+            if (!valueFromCSVLine(line, c->household_size_1)) {
+                throw std::runtime_error("bad value for household_size_1 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_2)) {
+                throw std::runtime_error("bad value for household_size_2 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_3)) {
+                throw std::runtime_error("bad value for household_size_3 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_4)) {
+                throw std::runtime_error("bad value for household_size_4 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_5)) {
+                throw std::runtime_error("bad value for household_size_5 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_6)) {
+                throw std::runtime_error("bad value for household_size_6 during csv parsing @todo\n");
             }
             if (!valueFromCSVLine(line, c->p_interaction_susceptible_to_exposed)) {
                 throw std::runtime_error("bad value for p_interaction_susceptible_to_exposed during csv parsing @todo\n");
@@ -196,6 +219,7 @@ void print(exateppabm::input::config config) {
     fmt::print("  param_id = {}\n", config.param_id);
     fmt::print("  duration = {}\n", config.duration);
     fmt::print("  n_total = {}\n", config.n_total);
+    fmt::print("  n_seed_infection = {}\n", config.n_seed_infection);
     fmt::print("  population_0_9 = {}\n", config.population_0_9);
     fmt::print("  population_10_19 = {}\n", config.population_10_19);
     fmt::print("  population_20_29 = {}\n", config.population_20_29);
@@ -205,7 +229,12 @@ void print(exateppabm::input::config config) {
     fmt::print("  population_60_69 = {}\n", config.population_60_69);
     fmt::print("  population_70_79 = {}\n", config.population_70_79);
     fmt::print("  population_80 = {}\n", config.population_80);
-    fmt::print("  n_seed_infection = {}\n", config.n_seed_infection);
+    fmt::print("  household_size_1 = {}\n", config.household_size_1);
+    fmt::print("  household_size_2 = {}\n", config.household_size_2);
+    fmt::print("  household_size_3 = {}\n", config.household_size_3);
+    fmt::print("  household_size_4 = {}\n", config.household_size_4);
+    fmt::print("  household_size_5 = {}\n", config.household_size_5);
+    fmt::print("  household_size_6 = {}\n", config.household_size_6);
     fmt::print("  p_interaction_susceptible_to_exposed = {}\n", config.p_interaction_susceptible_to_exposed);
     fmt::print("  mean_time_to_infected = {}\n", config.mean_time_to_infected);
     fmt::print("  sd_time_to_infected = {}\n", config.sd_time_to_infected);

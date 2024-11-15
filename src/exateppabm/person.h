@@ -42,19 +42,21 @@ DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE[] = "infection_state";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
 DEVICE_CONSTEXPR_STRING constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
+DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_IDX[] = "household_idx";
+DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_SIZE[] = "household_size";
 }  // namespace v
 
 /**
  * Namespace containing person-message related constants
  */
 namespace message {
-DEVICE_CONSTEXPR_STRING constexpr char STATUS[] = "status";
 /**
  * Namespace containing variable name constants for variables in person related messages
  */
-namespace v {
-DEVICE_CONSTEXPR_STRING constexpr char STATUS_ID[] = "id";
-}  // namespace v
+namespace household_status {
+DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "household_status";
+DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
+}  // namespace household_status
 }  // namespace message
 
 

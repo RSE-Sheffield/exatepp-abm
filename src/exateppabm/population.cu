@@ -89,11 +89,26 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
 
     std::uniform_real_distribution<float> demo_dist(0.0f, 1.0f);
 
+    // Generate a vector containing the number of individuals for each household
+    auto householdSizes = generateHouseholdSizes<std::uint8_t>(config, verbose, rng);
+    auto householdIndexPerPerson = std::vector<std::uint32_t>(config.n_total, 0);
+    // Generate a vector for each person to be created, which contains the index of the house it will be assigned to.
+    std::size_t hippOffset = 0;
+    for (std::size_t houseIdx = 0; houseIdx < householdSizes.size(); houseIdx++) {
+        auto houseSize = householdSizes[houseIdx];
+        std::fill_n(householdIndexPerPerson.begin() + hippOffset, houseSize, houseIdx);
+        hippOffset += houseSize;
+    }
+    // @todo - Shuffle the vector? Not strictly neccessary as house sizes are randomized?
+
     unsigned idx = 0;
     for (auto person : *pop) {
-        // Infections status
+        // Infections status. @todo - refactor into seir.cu?
         disease::SEIR::InfectionState infectionStatus = infected_vector.at(idx) ? disease::SEIR::InfectionState::Infected : disease::SEIR::InfectionState::Susceptible;
         person.setVariable<disease::SEIR::InfectionStateUnderlyingType>(exateppabm::person::v::INFECTION_STATE, infectionStatus);
+        // Also set the initial infection duration. @todo - stochastic.
+        float infectionStateDuration = infectionStatus == disease::SEIR::InfectionState::Infected ? config.mean_time_to_recovered: 0;
+        person.setVariable<float>(exateppabm::person::v::INFECTION_STATE_DURATION, infectionStateDuration);
 
         // Demographic
         // @todo - this is a bit grim, enum class aren't as nice as hoped.

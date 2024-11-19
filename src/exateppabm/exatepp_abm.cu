@@ -94,7 +94,7 @@ int entrypoint(int argc, char* argv[]) {
     exateppabm::disease::SEIR::define(model, *config);
 
     // Add init, step and exit functions related to data collection and output. This may want refactoring when multiple output files are supported or collected data becomes more complex.
-    exateppabm::output::define(model, cli_params->outputDir);
+    exateppabm::output::define(model, cli_params->outputDir, cli_params->individualFile);
 
     // Build the model control flow. This will want abstracting more in the future @todo
     // @note - not using the DAG control flow due to bugs encountered in another project when splitting between compilation units.

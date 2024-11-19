@@ -24,6 +24,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/OutputFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerformanceFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerIndividualFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.h
@@ -37,6 +38,8 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerformanceFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerIndividualFile.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.cu

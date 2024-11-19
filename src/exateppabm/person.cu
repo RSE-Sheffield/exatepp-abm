@@ -97,6 +97,8 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBruteForce, flamegpu
                             float sd = FLAMEGPU->environment.getProperty<float>("sd_time_to_infected");
                             stateDuration = (FLAMEGPU->random.normal<float>() * sd) + mean;
                             // @todo - for now only any exposure matters. This may want to change when quantity of exposure is important?
+                            // Increment the infection counter for this individual
+                            FLAMEGPU->setVariable<std::uint32_t>(v::INFECTION_COUNT, FLAMEGPU->getVariable<std::uint32_t>(v::INFECTION_COUNT) + 1);
                             break;
                         }
                     }
@@ -211,6 +213,8 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBruteForce, flamegpu
                                 float sd = FLAMEGPU->environment.getProperty<float>("sd_time_to_infected");
                                 stateDuration = (FLAMEGPU->random.normal<float>() * sd) + mean;
                                 // @todo - for now only any exposure matters. This may want to change when quantity of exposure is important?
+                                // Increment the infection counter for this individual
+                                FLAMEGPU->setVariable<std::uint32_t>(v::INFECTION_COUNT, FLAMEGPU->getVariable<std::uint32_t>(v::INFECTION_COUNT) + 1);
                                 break;
                             }
                         }
@@ -258,6 +262,9 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     agent.newVariable<std::uint32_t>(person::v::INFECTION_STATE_CHANGE_DAY, 0);
     // Time until next state change? Defaults to the simulation duration + 1.
     agent.newVariable<float>(person::v::INFECTION_STATE_DURATION, params.duration + 1);
+
+    // Integer count for the number of times infected, defaults to 0
+    agent.newVariable<std::uint32_t>(person::v::INFECTION_COUNT, 0u);
 
     // age demographic
     // @todo make this an enum, and update uses of it, but flame's templating disagrees?

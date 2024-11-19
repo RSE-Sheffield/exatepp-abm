@@ -41,6 +41,7 @@ DEVICE_CONSTEXPR_STRING constexpr char z[] = "z";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE[] = "infection_state";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
+DEVICE_CONSTEXPR_STRING constexpr char INFECTION_COUNT[] = "infection_count";
 DEVICE_CONSTEXPR_STRING constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_IDX[] = "household_idx";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_SIZE[] = "household_size";
@@ -64,8 +65,8 @@ DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
  * Namespace containing variable name constants for variables in workplace related messages
  */
 namespace workplace_status {
-__host__ __device__ constexpr char _NAME[] = "workplace_status";
-__host__ __device__ constexpr char ID[] = "id";
+DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "workplace_status";
+DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
 }  // namespace workplace_status
 }  // namespace message
 

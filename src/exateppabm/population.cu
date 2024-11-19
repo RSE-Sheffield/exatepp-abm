@@ -200,6 +200,11 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         float infectionStateDuration = infectionStatus == disease::SEIR::InfectionState::Infected ? config.mean_time_to_recovered: 0;
         person.setVariable<float>(exateppabm::person::v::INFECTION_STATE_DURATION, infectionStateDuration);
 
+        // initialise the agents infection count
+        if (infectionStatus == disease::SEIR::Infected) {
+            person.setVariable<std::uint32_t>(exateppabm::person::v::INFECTION_COUNT, 1);
+        }
+
         // Demographic
         // @todo - this is a bit grim, enum class aren't as nice as hoped.
         float demo_random = demo_dist(rng);

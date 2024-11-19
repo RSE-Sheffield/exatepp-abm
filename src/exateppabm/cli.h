@@ -37,6 +37,10 @@ struct params {
      * Path to directory for file output
      */
     std::string outputDir = std::filesystem::current_path();
+    /**
+     * bool indicating if the individual file should be written
+     */
+    bool individualFile = false;
 };
 
 /**

@@ -25,9 +25,14 @@ std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
 
 }  // namespace
 
-// @todo - add to header, refactor a bit.
-// @note only generates up to 6 members per household, no accounting for 6+
-// Calculate the number of each household size to generate, based on the input distributions
+/**
+ * Generate a vector of household sizes, with enough places for all individuals, using probabilities derived from reference household size distributions (in put params)
+ *
+ * This is not how the reference model initialises households, and this is intended to be replaced in #6 when more advanced network initialisation is implemented.
+ *
+ * @note max house size is 6, does not allow for 6+ as in reference data
+ * @note final generated housesize will be reduced to not be too large, slighlty skewing the distribution
+ */
 template <typename T>
 std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, const bool verbose, std::mt19937_64 & rng) {
     // Initialise vector with each config household size
@@ -218,6 +223,8 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         std::uint8_t householdSize = householdSizes[householdIdx];
         person.setVariable<std::uint8_t>(person::v::HOUSEHOLD_SIZE, householdSize);
 
+        // Work/occupation networks can only be set once all age demographics are known, so done in a subsequent loop. @todo this method needs refactoring eventually.
+
         // Location in 3D space (temp/vis)
         unsigned row = idx / sq_width;
         unsigned col = idx % sq_width;
@@ -226,6 +233,80 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         person.setVariable<float>(exateppabm::person::v::z, 0);  // @todo -temp
 
         // Inc counter
+        ++idx;
+    }
+
+    // Workplace per individual can now be set, as the total number of young and old people must be known to compute the distribution for adults.
+    // This is likely to be refactored.
+
+    // For adults, compute the likelihood they will be assigned to child or elderly network
+    // @todo - prolly use a vector so we can have multiple networks instead of just 3...
+    std::uint64_t n_children = createdPerDemographic[demographics::Age::AGE_0_9] + createdPerDemographic[demographics::Age::AGE_10_19];
+    std::uint64_t n_elderly = createdPerDemographic[demographics::Age::AGE_70_79] + createdPerDemographic[demographics::Age::AGE_80];
+    std::uint64_t n_adult = config.n_total - (n_children + n_elderly);
+
+    // Initialise with the target number of adults in each network
+    std::array<double, 3> p_adultPerWorkNetwork = {0};
+    // p of each category is target number / number adults
+    p_adultPerWorkNetwork[0] = (config.child_network_adults * n_children) / n_adult;
+    p_adultPerWorkNetwork[2] = (config.elderly_network_adults * n_elderly) / n_adult;
+    // p of being adult is then the remaining probabilty
+    p_adultPerWorkNetwork[1] = 1.0 - (p_adultPerWorkNetwork[0] + p_adultPerWorkNetwork[2]);
+
+    // Then convert to cumulative probability with an inclusive scan
+    std::inclusive_scan(p_adultPerWorkNetwork.begin(), p_adultPerWorkNetwork.end(), p_adultPerWorkNetwork.begin());
+    // make sure the top bracket ends in >=1.0
+    p_adultPerWorkNetwork[2] = 1.0;
+    // fmt::print("p work adult: {} {} {}\n",p_adultPerWorkNetwork[0], p_adultPerWorkNetwork[1],p_adultPerWorkNetwork[2]);
+
+    // Use a uniform distribution from 0 to 1
+    std::uniform_real_distribution<float> work_network_dist(0.0f, 1.0f);
+
+
+    // Prep to track how many people are in each network
+    std::array<std::uint32_t, 3> peoplePerWorkplace = {{0, 0, 0}};
+
+    // @todo - add an enum.
+
+    idx = 0;
+    for (auto person : *pop) {
+        // Assign the workplace based on age band
+        std::uint32_t workplaceIdx = 1;
+        demographics::Age age = static_cast<demographics::Age>(person.getVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC));
+
+        if (age == demographics::Age::AGE_0_9 || age == demographics::Age::AGE_10_19) {
+            workplaceIdx = 0;  // @todo enum?
+        } else if (age == demographics::Age::AGE_70_79 || age == demographics::Age::AGE_80) {
+            workplaceIdx = 2;  // @todo enum?
+        } else {
+            // Randomly sample
+            float r = work_network_dist(rng);
+            for (std::uint32_t i = 0; i < p_adultPerWorkNetwork.size(); i++) {
+                if (r < p_adultPerWorkNetwork[i]) {
+                    workplaceIdx = i;
+                    break;
+                }
+            }
+        }
+
+        // inc the counter per network
+        peoplePerWorkplace[workplaceIdx]++;
+        // Store the assigned network in the agent data structure
+        person.setVariable<std::uint32_t>(person::v::WORKPLACE_IDX, workplaceIdx);
+        ++idx;
+    }
+
+    // Finally we can assign the size of each network in another separate pass. Would be nice if we could do this in less passes...
+
+    idx = 0;
+    for (auto person : *pop) {
+        // get the assigned workplace
+        std::uint32_t workplaceIdx = person.getVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
+        // Lookup the generated size
+        std::uint32_t workplaceSize = peoplePerWorkplace[workplaceIdx];
+        // Store in the agent's data, for faster lookup. @todo - refactor to a env property if maximum workplace count is definitely known at model definition time?
+        person.setVariable<std::uint32_t>(person::v::WORKPLACE_SIZE, workplaceSize);
+        // int counter
         ++idx;
     }
 
@@ -243,6 +324,11 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         fmt::print("  60-69 = {}\n", createdPerDemographic[6]);
         fmt::print("  70-79 = {}\n", createdPerDemographic[7]);
         fmt::print("  80+   = {}\n", createdPerDemographic[8]);
+        fmt::print("}}\n");
+        fmt::print("Workplaces {{\n");
+        fmt::print("  children: {}, adults {}\n", n_children,  peoplePerWorkplace[0] - n_children);
+        fmt::print("  adults {}\n", peoplePerWorkplace[1]);
+        fmt::print("  adults {}, elderly {}\n", peoplePerWorkplace[2] - n_elderly, n_elderly);
         fmt::print("}}\n");
     }
 

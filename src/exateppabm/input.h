@@ -173,6 +173,30 @@ struct config {
      * Arbitrary default value
      */
     float relative_susceptibility_80 = 1.0;
+    /**
+     * Proportion of adults to children in school networks (0-19)
+     */
+    double child_network_adults = 0.2;
+    /**
+     * Proportion of adults to elderly in work networks for retired/elderly individuals (70+)
+     */
+    double elderly_network_adults = 0.2;
+    /**
+     * Relative transmission rate for interactions within the household
+     * Arbitrary default value
+     */
+    float relative_transmission_household = 2.0f;
+    /**
+     * Relative transmission rate for interactions within the occupation network 
+     * Arbitrary default value
+     */
+    float relative_transmission_occupation = 1.0f;
+    /**
+     * Fraction of people in work network interacted with per day (by rng sampling)
+     * 
+     * @todo - this probably needs using differntly with more realistic networks
+     */
+    float daily_fraction_work = 0.5f;
 };
 
 /**

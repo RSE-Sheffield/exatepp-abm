@@ -199,6 +199,21 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->relative_susceptibility_80)) {
                 throw std::runtime_error("bad value for relative_susceptibility_80 during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->child_network_adults)) {
+                throw std::runtime_error("bad value for child_network_adults during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->elderly_network_adults)) {
+                throw std::runtime_error("bad value for elderly_network_adults during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_transmission_household)) {
+                throw std::runtime_error("bad value for relative_transmission_household during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_transmission_occupation)) {
+                throw std::runtime_error("bad value for relative_transmission_occupation during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->daily_fraction_work)) {
+                throw std::runtime_error("bad value for daily_fraction_work during csv parsing @todo\n");
+            }
 
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
@@ -251,6 +266,11 @@ void print(exateppabm::input::config config) {
     fmt::print("  relative_susceptibility_60_69 = {}\n", config.relative_susceptibility_60_69);
     fmt::print("  relative_susceptibility_70_79 = {}\n", config.relative_susceptibility_70_79);
     fmt::print("  relative_susceptibility_80 = {}\n", config.relative_susceptibility_80);
+    fmt::print("  child_network_adults = {}\n", config.child_network_adults);
+    fmt::print("  elderly_network_adults = {}\n", config.elderly_network_adults);
+    fmt::print("  relative_transmission_household = {}\n", config.relative_transmission_household);
+    fmt::print("  relative_transmission_occupation = {}\n", config.relative_transmission_occupation);
+    fmt::print("  daily_fraction_work = {}\n", config.daily_fraction_work);
     fmt::print("}}\n");
 }
 

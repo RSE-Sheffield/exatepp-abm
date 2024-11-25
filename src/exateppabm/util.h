@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <numeric>
+#include <algorithm>
 
 namespace exateppabm {
 namespace util {
@@ -89,6 +90,38 @@ void inplace_inclusive_scan(T& container) {
     std::inclusive_scan(container.begin(), container.end(), container.begin());
 #else
     naive_inplace_inclusive_scan(container);
+#endif  // defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+}
+
+/**
+ * reduce elements of a container, i.e. std::reduce, for libstdc++ which does not support c++17 (i.e. GCC 8)
+ * 
+ * equivalent to std::reduce(first, last, init);
+ * 
+ * @param first - input iterator for the first element
+ * @param last - input iterator for the last element
+ * @param init - initial value to reduce into (and inferred type)
+ * @return reduction (sum) if values between in [first, last)
+ */
+template <typename InputIt, typename T>
+T naive_reduce(InputIt first, InputIt last, T init) {
+    for (; first != last; ++first) {
+        init += *first;
+    }
+    return init;
+}
+
+/**
+ * reduce elements of a container, using std::reduce if possible, else a naive implementation.
+ * 
+ * equivalent to std::reduce(first, last, init);
+ */
+template <typename InputIt, typename T>
+T reduce(InputIt first, InputIt last, T init) {
+#if defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+    return std::reduce(first, last, init);
+#else
+    return naive_reduce(first, last, init);
 #endif  // defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
 }
 

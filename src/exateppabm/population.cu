@@ -38,14 +38,14 @@ std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, co
     // Initialise vector with each config household size
     std::vector<std::uint64_t> countPerSize = {{config.household_size_1, config.household_size_2, config.household_size_3, config.household_size_4, config.household_size_5, config.household_size_6}};
     // get the sum, to find relative proportions
-    std::uint64_t sumConfigHouseholdSizes = std::reduce(countPerSize.begin(), countPerSize.end());
+    std::uint64_t sumConfigHouseholdSizes = exateppabm::util::reduce(countPerSize.begin(), countPerSize.end(), 0ull);
     // Get the number of people in each household band for the reference size
     // Find the number of people that the reference household sizes can account for
     std::vector<std::uint64_t> peoplePerHouseSize = countPerSize;
     for (std::size_t idx = 0; idx < peoplePerHouseSize.size(); idx++) {
         peoplePerHouseSize[idx] = (idx + 1) * peoplePerHouseSize[idx];
     }
-    std::uint64_t sumConfigPeoplePerHouseSize = std::reduce(peoplePerHouseSize.begin(), peoplePerHouseSize.end());
+    std::uint64_t sumConfigPeoplePerHouseSize = exateppabm::util::reduce(peoplePerHouseSize.begin(), peoplePerHouseSize.end(), 0ull);
     double configMeanPeoplePerHouseSize = sumConfigPeoplePerHouseSize / static_cast<double>(sumConfigHouseholdSizes);
 
     if (verbose) {
@@ -106,7 +106,7 @@ std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, co
         }
         fmt::print("}}\n");
         // Sum the number of people per household
-        std::uint64_t sumPeoplePerHouse = std::reduce(peoplePerHouse.begin(), peoplePerHouse.end(), 0ull);
+        std::uint64_t sumPeoplePerHouse = exateppabm::util::reduce(peoplePerHouse.begin(), peoplePerHouse.end(), 0ull);
         // Check the mean still agrees.
         double generatedMeanPeoplePerHouseSize = sumPeoplePerHouse / static_cast<double>(peoplePerHouse.size());
         fmt::print("generated mean household size {}\n", generatedMeanPeoplePerHouseSize);

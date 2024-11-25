@@ -22,6 +22,25 @@ namespace {
 
 std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
 
+
+/**
+ * in-place inclusive scan, for libstdc++ which does not support c++17 (i.e. GCC 8)
+ */
+template <typename T>
+void inplace_inclusive_scan(T& container) {
+    // @todo - use cmake to detect which path needs taking
+    // std::inclusive_scan(container.begin(), container.end(), container.begin());
+    // return;
+    // @todo - refactor this into a testable method, in a util namespace?
+    if (container.size() <= 1) {
+        return;
+    }
+    // Naive in-place inclusive scan for libstc++8
+    for (size_t i = 1; i < container.size(); ++i) {
+        container[i] = container[i - 1] + container[i];
+    }
+}
+
 }  // namespace
 
 std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const bool verbose, const float env_width, const float interactionRadius) {
@@ -65,7 +84,9 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         config.population_80 / static_cast<float>(configDemographicSum)
     }};
     // Perform an inclusive scan to convert to cumulative probability
-    std::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
+    // Using a local method which supports inclusive scans in old libstc++
+    inplace_inclusive_scan(demographicProbabilties);
+    // std::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
     std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
         demographics::Age::AGE_0_9,
         demographics::Age::AGE_10_19,

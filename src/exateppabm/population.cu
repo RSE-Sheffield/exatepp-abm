@@ -158,7 +158,6 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     // Perform an inclusive scan to convert to cumulative probability
     // Using a local method which supports inclusive scans in old libstc++
     exateppabm::util::inplace_inclusive_scan(demographicProbabilties);
-    // std::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
     std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
         demographics::Age::AGE_0_9,
         demographics::Age::AGE_10_19,
@@ -259,7 +258,8 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     p_adultPerWorkNetwork[1] = 1.0 - (p_adultPerWorkNetwork[0] + p_adultPerWorkNetwork[2]);
 
     // Then convert to cumulative probability with an inclusive scan
-    std::inclusive_scan(p_adultPerWorkNetwork.begin(), p_adultPerWorkNetwork.end(), p_adultPerWorkNetwork.begin());
+    exateppabm::util::inplace_inclusive_scan(p_adultPerWorkNetwork);
+
     // make sure the top bracket ends in >=1.0
     p_adultPerWorkNetwork[2] = 1.0;
     // fmt::print("p work adult: {} {} {}\n",p_adultPerWorkNetwork[0], p_adultPerWorkNetwork[1],p_adultPerWorkNetwork[2]);

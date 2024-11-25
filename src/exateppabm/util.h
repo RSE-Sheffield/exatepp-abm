@@ -71,7 +71,7 @@ std::string getCMakeBuildType();
 template <typename InputIt, typename OutputIt>
 void naive_inclusive_scan(InputIt first, InputIt last, OutputIt d_first) {
     using T = typename std::iterator_traits<InputIt>::value_type;
-    T acc = T(); // default initialise T (the inferred type)
+    T acc = T();  // default initialise T (the inferred type)
     for (; first != last; ++first, ++d_first) {
         acc += *first;
         *d_first = acc;

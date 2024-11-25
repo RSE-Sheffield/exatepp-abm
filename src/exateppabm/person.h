@@ -6,6 +6,18 @@
 namespace exateppabm {
 namespace person {
 
+#ifdef __CUDACC__
+/**
+ * Macro for allowing __host__ __device__ to be used in a header which is also included in a .cpp file, when compiling with nvcc
+ */
+#define DEVICE_CONSTEXPR_STRING __device__
+#else  // __CUDACC__
+/**
+ * Macro for allowing __host__ __device__ to be used in a header which is also included in a .cpp file, when compiling with the c++ compiler
+ */
+#define DEVICE_CONSTEXPR_STRING
+#endif  // __CUDACC__
+
 /**
  * Agent type name for the person agents
  */
@@ -23,25 +35,25 @@ constexpr char DEFAULT[] = "default";
  */
 namespace v {
 // @todo - this is grim :'(. Should prolly use macros instead  Requires CUDA 11.4+ apparently.
-__host__ __device__ constexpr char x[] = "x";
-__host__ __device__ constexpr char y[] = "y";
-__host__ __device__ constexpr char z[] = "z";
-__host__ __device__ constexpr char INFECTION_STATE[] = "infection_state";
-__host__ __device__ constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
-__host__ __device__ constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
-__host__ __device__ constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
+DEVICE_CONSTEXPR_STRING constexpr char x[] = "x";
+DEVICE_CONSTEXPR_STRING constexpr char y[] = "y";
+DEVICE_CONSTEXPR_STRING constexpr char z[] = "z";
+DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE[] = "infection_state";
+DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
+DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
+DEVICE_CONSTEXPR_STRING constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
 }  // namespace v
 
 /**
  * Namespace containing person-message related constants
  */
 namespace message {
-__host__ __device__ constexpr char STATUS[] = "status";
+DEVICE_CONSTEXPR_STRING constexpr char STATUS[] = "status";
 /**
  * Namespace containing variable name constants for variables in person related messages
  */
 namespace v {
-__host__ __device__ constexpr char STATUS_ID[] = "id";
+DEVICE_CONSTEXPR_STRING constexpr char STATUS_ID[] = "id";
 }  // namespace v
 }  // namespace message
 
@@ -66,6 +78,8 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 void appendLayers(flamegpu::ModelDescription& model);
 
 
+// Undefine the host device macro to avoid potential macro collisions
+#undef DEVICE_CONSTEXPR_STRING
 
 }  // namespace person
 }  // namespace exateppabm

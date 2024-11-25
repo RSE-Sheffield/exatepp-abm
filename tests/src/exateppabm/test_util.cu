@@ -161,3 +161,119 @@ TEST(TestUtil, std_inclusive_scan_vec_double) {
 TEST(TestUtil, DISABLED_std_inclusive_scan_vec_double) {
 }
 #endif
+
+
+/**
+ * Test the naive plus reduction an array of integers
+ */
+TEST(TestUtil, naive_reduce_array_int) {
+    constexpr std::uint32_t ELEMENTS = 4;
+    std::array<int, ELEMENTS> in = {{1, 2, 3, 4}};
+    const int expected = 10;
+    auto value = exateppabm::util::naive_reduce(in.begin(), in.end(), 0);
+    EXPECT_EQ(value, expected);
+}
+
+/**
+ * Test the naive plus reduction a vector of unsigned integers
+ */
+TEST(TestUtil, naive_reduce_vec_uint) {
+    std::vector<std::uint32_t> in = {{1, 2, 3, 4}};
+    const std::uint32_t expected = 10u;
+    auto value = exateppabm::util::naive_reduce(in.begin(), in.end(), 0u);
+    EXPECT_EQ(value, expected);
+}
+
+/**
+ * Test the naive plus reduction a vector of floats, using an arbitrary epsilon value which is good enough for the input values
+ */
+TEST(TestUtil, naive_reduce_vec_double) {
+    std::vector<double> in = {{1.1, 2.2, 3.3, 4.4}};
+    const double expected = 11.0;
+    auto value = exateppabm::util::naive_reduce(in.begin(), in.end(), 0.);
+    constexpr double EPSILON = 1.0e-6f;
+    EXPECT_NEAR(value, expected, EPSILON);
+}
+
+/**
+ * Test the naive or std plus reduction an array of integers
+ */
+TEST(TestUtil, reduce_array_int) {
+    constexpr std::uint32_t ELEMENTS = 4;
+    std::array<int, ELEMENTS> in = {{1, 2, 3, 4}};
+    const int expected = 10;
+    auto value = exateppabm::util::reduce(in.begin(), in.end(), 0);
+    EXPECT_EQ(value, expected);
+}
+
+/**
+ * Test the naive or std plus reduction a vector of unsigned integers
+ */
+TEST(TestUtil, reduce_vec_uint) {
+    std::vector<std::uint32_t> in = {{1, 2, 3, 4}};
+    const std::uint32_t expected = 10u;
+    auto value = exateppabm::util::reduce(in.begin(), in.end(), 0u);
+    EXPECT_EQ(value, expected);
+}
+
+/**
+ * Test the naive or std plus reduction a vector of floats, using an arbitrary epsilon value which is good enough for the input values
+ */
+TEST(TestUtil, reduce_vec_double) {
+    std::vector<double> in = {{1.1, 2.2, 3.3, 4.4}};
+    const double expected = 11.0;
+    auto value = exateppabm::util::reduce(in.begin(), in.end(), 0.);
+    constexpr double EPSILON = 1.0e-6f;
+    EXPECT_NEAR(value, expected, EPSILON);
+}
+
+/**
+ * Test the std plus reduction an array of integers
+ This is just to check the test case behaves too
+ */
+#if defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+TEST(TestUtil, std_reduce_array_int) {
+    constexpr std::uint32_t ELEMENTS = 4;
+    std::array<int, ELEMENTS> in = {{1, 2, 3, 4}};
+    const int expected = 10;
+    auto value = std::reduce(in.begin(), in.end(), 0);
+    EXPECT_EQ(value, expected);
+}
+#else
+TEST(TestUtil, DISABLED_std_reduce_array_int) {
+}
+#endif
+
+
+/**
+ * Test the std plus reduction a vector of unsigned integers.
+ * This is just to check the test case behaves too
+ */
+#if defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+TEST(TestUtil, std_reduce_vec_uint) {
+    std::vector<std::uint32_t> in = {{1, 2, 3, 4}};
+    const std::uint32_t expected = 10u;
+    auto value = std::reduce(in.begin(), in.end(), 0u);
+    EXPECT_EQ(value, expected);
+}
+#else
+TEST(TestUtil, DISABLED_std_reduce_vec_uint) {
+}
+#endif
+
+/**
+ * Test the std plus reduction a vector of floats, using an arbitrary epsilon value which is good enough for the input values.
+ * This is just to check the test case behaves too
+ */
+#if defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+TEST(TestUtil, std_reduce_vec_double) {
+    std::vector<double> in = {{1.1, 2.2, 3.3, 4.4}};
+    const double expected = 11.0;
+    auto value = std::reduce(in.begin(), in.end(), 0.);
+    constexpr double EPSILON = 1.0e-6f;
+    EXPECT_NEAR(value, expected, EPSILON);
+}
+#else
+TEST(TestUtil, DISABLED_std_reduce_vec_double) {
+}
+#endif

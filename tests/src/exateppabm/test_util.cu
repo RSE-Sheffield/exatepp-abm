@@ -15,7 +15,7 @@ TEST(TestUtil, naive_inplace_inclusive_scan_array_int) {
     std::array<int, ELEMENTS> inout = {{1, 2, 3, 4}};
     const std::array<int, ELEMENTS> expected = {{1, 3, 6, 10}};
 
-    exateppabm::util::naive_inplace_inclusive_scan(inout);
+    exateppabm::util::naive_inclusive_scan(inout.begin(), inout.end(), inout.begin());
 
     for (std::uint32_t e = 0; e < inout.size(); e++) {
         EXPECT_EQ(inout[e], expected[e]);
@@ -29,7 +29,7 @@ TEST(TestUtil, naive_inplace_inclusive_scan_vec_uint) {
     std::vector<std::uint32_t> inout = {{1, 2, 3, 4}};
     const std::vector<std::uint32_t> expected = {{1, 3, 6, 10}};
 
-    exateppabm::util::naive_inplace_inclusive_scan(inout);
+    exateppabm::util::naive_inclusive_scan(inout.begin(), inout.end(), inout.begin());
 
     for (std::uint32_t e = 0; e < inout.size(); e++) {
         EXPECT_EQ(inout[e], expected[e]);
@@ -43,7 +43,7 @@ TEST(TestUtil, naive_inplace_inclusive_scan_vec_double) {
     std::vector<float> inout = {{1.1, 2.2, 3.3, 4.4}};
     const std::vector<float> expected = {{1.1, 3.3, 6.6, 11.0}};
 
-    exateppabm::util::naive_inplace_inclusive_scan(inout);
+    exateppabm::util::naive_inclusive_scan(inout.begin(), inout.end(), inout.begin());
 
     constexpr float EPSILON = 1.0e-6f;
 
@@ -60,7 +60,7 @@ TEST(TestUtil, inplace_inclusive_scan_array_int) {
     std::array<int, ELEMENTS> inout = {{1, 2, 3, 4}};
     const std::array<int, ELEMENTS> expected = {{1, 3, 6, 10}};
 
-    exateppabm::util::inplace_inclusive_scan(inout);
+    exateppabm::util::inclusive_scan(inout.begin(), inout.end(), inout.begin());
 
     for (std::uint32_t e = 0; e < inout.size(); e++) {
         EXPECT_EQ(inout[e], expected[e]);
@@ -74,7 +74,7 @@ TEST(TestUtil, inplace_inclusive_scan_vec_uint) {
     std::vector<std::uint32_t> inout = {{1, 2, 3, 4}};
     const std::vector<std::uint32_t> expected = {{1, 3, 6, 10}};
 
-    exateppabm::util::inplace_inclusive_scan(inout);
+    exateppabm::util::inclusive_scan(inout.begin(), inout.end(), inout.begin());
 
     for (std::uint32_t e = 0; e < inout.size(); e++) {
         EXPECT_EQ(inout[e], expected[e]);
@@ -88,7 +88,7 @@ TEST(TestUtil, inplace_inclusive_scan_vec_double) {
     std::vector<float> inout = {{1.1, 2.2, 3.3, 4.4}};
     const std::vector<float> expected = {{1.1, 3.3, 6.6, 11.0}};
 
-    exateppabm::util::inplace_inclusive_scan(inout);
+    exateppabm::util::inclusive_scan(inout.begin(), inout.end(), inout.begin());
 
     constexpr float EPSILON = 1.0e-6f;
 

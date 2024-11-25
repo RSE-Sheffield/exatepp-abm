@@ -68,7 +68,7 @@ std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, co
         householdSizeProbability[idx] = countPerSize[idx] / static_cast<double>(sumConfigHouseholdSizes);
     }
     // Perform an inclusive scan to convert to cumulative probability
-    exateppabm::util::inplace_inclusive_scan(householdSizeProbability);
+    exateppabm::util::inclusive_scan(householdSizeProbability.begin(), householdSizeProbability.end(), householdSizeProbability.begin());
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 
@@ -157,7 +157,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     }};
     // Perform an inclusive scan to convert to cumulative probability
     // Using a local method which supports inclusive scans in old libstc++
-    exateppabm::util::inplace_inclusive_scan(demographicProbabilties);
+    exateppabm::util::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
     std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
         demographics::Age::AGE_0_9,
         demographics::Age::AGE_10_19,
@@ -258,7 +258,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     p_adultPerWorkNetwork[1] = 1.0 - (p_adultPerWorkNetwork[0] + p_adultPerWorkNetwork[2]);
 
     // Then convert to cumulative probability with an inclusive scan
-    exateppabm::util::inplace_inclusive_scan(p_adultPerWorkNetwork);
+    exateppabm::util::inclusive_scan(p_adultPerWorkNetwork.begin(), p_adultPerWorkNetwork.end(), p_adultPerWorkNetwork.begin());
 
     // make sure the top bracket ends in >=1.0
     p_adultPerWorkNetwork[2] = 1.0;

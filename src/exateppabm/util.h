@@ -4,6 +4,7 @@
 #include <string>
 #include <numeric>
 #include <algorithm>
+#include <iterator>
 
 namespace exateppabm {
 namespace util {
@@ -56,40 +57,42 @@ bool getSeatbeltsEnabled();
  */
 std::string getCMakeBuildType();
 
-
 /**
- * Perform an inclusive scan on an interable (i.e. std::array<float>), without using std::inclusive_scan which although part of c++17 is not available in some older stdlib implementations (i.e. gcc 8). 
- */
-
-/**
- * In-place inclusive scan, for libstdc++ which does not support c++17 (i.e. GCC 8)
+ * Inclusive scan from [first, last) writing into d_first (and onwards), for libstdc++ which does not support c++17 (i.e. GCC 8)
  * 
- * equivalent to std::inclusive_scan(container.begin(), container.end(), container.begin());
+ * equivalent to std::inclusive_scan(first, last, d_first);
  * 
- * @param container iterable container / something with size() and operator[]
+ * @note - this is very naive, and will happily do out of bounds reads/writes. Using GCC >= 8 is greatly preferred
+ * 
+ * @param first - input iterator for the first element
+ * @param last - input iterator for the last element
+ * @param d_first destination iterator for the last element
  */
-template <typename T>
-void naive_inplace_inclusive_scan(T& container) {
-    if (container.size() <= 1) {
-        return;
-    }
-    // Naive in-place inclusive scan for libstc++8
-    for (size_t i = 1; i < container.size(); ++i) {
-        container[i] = container[i - 1] + container[i];
+template <typename InputIt, typename OutputIt>
+void naive_inclusive_scan(InputIt first, InputIt last, OutputIt d_first) {
+    using T = typename std::iterator_traits<InputIt>::value_type;
+    T acc = T(); // default initialise T (the inferred type)
+    for (; first != last; ++first, ++d_first) {
+        acc += *first;
+        *d_first = acc;
     }
 }
 
 /**
- * In-place inclusive scan, using std::inclusive_scan if possible, else a naive implementation.
+ * Inclusive scan from [first, last) writing into d_first (and onwards), using std::inclusive_scan if possible, else a naive implementation.
  * 
- * equivalent to std::inclusive_scan(container.begin(), container.end(), container.begin());
+ * equivalent to std::inclusive_scan(first, last, d_first);
+ *
+ * @param first - input iterator for the first element
+ * @param last - input iterator for the last element
+ * @param d_first destination iterator for the last element
  */
-template <typename T>
-void inplace_inclusive_scan(T& container) {
+template <typename InputIt, typename OutputIt>
+void inclusive_scan(InputIt first, InputIt last, OutputIt d_first) {
 #if defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
-    std::inclusive_scan(container.begin(), container.end(), container.begin());
+    std::inclusive_scan(first, last, d_first);
 #else
-    naive_inplace_inclusive_scan(container);
+    naive_inclusive_scan(first, last, d_first);
 #endif  // defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
 }
 

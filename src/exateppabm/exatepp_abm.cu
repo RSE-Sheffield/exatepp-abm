@@ -83,9 +83,7 @@ int entrypoint(int argc, char* argv[]) {
     flamegpu::ModelDescription model("ExaTEPP ABM demonstrator");
 
     // Add the person agent to the model description
-    const float env_width = std::ceil(std::sqrt(config->n_total));
-    constexpr float interactionRadius = 1.5f;
-    exateppabm::person::define(model, *config, env_width, interactionRadius);
+    exateppabm::person::define(model, *config);
 
     // Define demographic related variables
     exateppabm::demographics::define(model, *config);
@@ -124,7 +122,7 @@ int entrypoint(int argc, char* argv[]) {
     // Generate the population of agents.
     // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
     const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
-    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0, env_width, interactionRadius);
+    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0);
     if (personPopulation == nullptr) {
         throw std::runtime_error("@todo - bad population generation function.");
     }

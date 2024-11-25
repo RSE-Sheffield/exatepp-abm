@@ -76,10 +76,8 @@ DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
  * Define the agent type representing a person in the simulation, mutating the model description object.
  * @param model flamegpu2 model description object to mutate
  * @param params model parameters from parameters file
- * @param width the width of the 2D space currently used for spatials comms. to be removed once networks added.
- * @param interactionRadius spatial interaction radius for temporary infection spread behaviour. to be removed.
  */
-void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params, const float width, const float interactionRadius);
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params);
 
 /**
  * Add person related functions to the FLAMEGPU 2 layer based control flow.

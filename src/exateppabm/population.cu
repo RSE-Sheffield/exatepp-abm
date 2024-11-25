@@ -115,15 +115,11 @@ std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, co
 }
 
 
-std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const bool verbose, const float env_width, const float interactionRadius) {
+std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config config, const bool verbose) {
     fmt::print("@todo - validate config inputs when generated agents (pop size, initial infected count etc)\n");
 
     // @todo - assert that the requested initial population is non zero.
     auto pop = std::make_unique<flamegpu::AgentVector>(model.Agent(exateppabm::person::NAME), config.n_total);
-
-    std::uint64_t sq_width = static_cast<std::uint64_t>(env_width);
-    // float expectedNeighbours = interactionRadius * interactionRadius;
-    // fmt::print("sq_width {} interactionRadius {} expectedNeighbours {}\n", sq_width, interactionRadius, expectedNeighbours);
 
     // seed host rng for population generation.
     // @todo - does this want to be a separate seed from the config file?
@@ -190,6 +186,27 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     }
     // @todo - Shuffle the vector? Not strictly neccessary as house sizes are randomized?
 
+#if defined(FLAMEGPU_VISUALISATION)
+    // Use the number of households to figure out the size of a 2D grid for visualisation purposes
+    std::uint64_t visHouseholdGridwidth = static_cast<std::uint64_t>(std::ceil(std::sqrt(static_cast<double>(householdSizes.size()))));
+    // Prep a vector of integers to find the location within a househod for each individual, for vis purposes.
+    auto visAssignedHouseholdCount = std::vector<std::uint8_t>(householdSizes.size(), 0);
+    constexpr float OFFSET_SF = 0.7f;
+    // offset per individual within household, hardcoded for now, upto 6 per house
+    std::array<float, 6> visHouseholdOffsetX = {{0.f
+        , OFFSET_SF * static_cast<float>(std::sin(0 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(72 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(144 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(216 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(288 * M_PI / 180.0))}};
+    std::array<float, 6> visHouseholdOffsetY = {{0.f
+        , OFFSET_SF * static_cast<float>(std::cos(0 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(72 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(144 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(216 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(288 * M_PI / 180.0))}};
+#endif  // defined(FLAMEGPU_VISUALISATION)
+
     unsigned idx = 0;
     for (auto person : *pop) {
         // Infections status. @todo - refactor into seir.cu?
@@ -229,12 +246,25 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
 
         // Work/occupation networks can only be set once all age demographics are known, so done in a subsequent loop. @todo this method needs refactoring eventually.
 
-        // Location in 3D space (temp/vis)
-        unsigned row = idx / sq_width;
-        unsigned col = idx % sq_width;
-        person.setVariable<float>(exateppabm::person::v::x, col);  // @todo temp
-        person.setVariable<float>(exateppabm::person::v::y, row);  // @todo -temp
-        person.setVariable<float>(exateppabm::person::v::z, 0);  // @todo -temp
+#if defined(FLAMEGPU_VISUALISATION)
+        // The agents' location in space depends on their houses' index and their index within the household.
+        // Get the center point of their household
+        unsigned visHouseholdRow = householdIdx / visHouseholdGridwidth;
+        unsigned visHouseholdCol = householdIdx % visHouseholdGridwidth;
+        // Get their index within their household
+        std::uint8_t idxInHouse = visAssignedHouseholdCount[householdIdx];
+        visAssignedHouseholdCount[householdIdx]++;
+        // Get their arbitrary offset, given a vector of offsets (6 potential values)
+        constexpr float VIS_HOUSE_GRID_SPACING = 2.5f;
+        float visX = (visHouseholdCol * VIS_HOUSE_GRID_SPACING) + visHouseholdOffsetX[idxInHouse % visHouseholdOffsetX.size()];
+        float visY = (visHouseholdRow * VIS_HOUSE_GRID_SPACING) + visHouseholdOffsetY[idxInHouse % visHouseholdOffsetY.size()];
+        float visZ = 0;
+
+        // Compute the x & y from the agent's index within their household
+        person.setVariable<float>(exateppabm::person::v::x, visX);
+        person.setVariable<float>(exateppabm::person::v::y, visY);
+        person.setVariable<float>(exateppabm::person::v::z, visZ);
+#endif  // defined(FLAMEGPU_VISUALISATION)
 
         // Inc counter
         ++idx;

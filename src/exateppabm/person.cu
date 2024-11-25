@@ -27,12 +27,6 @@ FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::Me
         FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(v::
         INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE));
         FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC));
-
-        // Location if used for comms
-        // FLAMEGPU->message_out.setVariable<float>(v::x, FLAMEGPU->getVariable<float>(v::x));
-        // FLAMEGPU->message_out.setVariable<float>(v::y, FLAMEGPU->getVariable<float>(v::y));
-        // FLAMEGPU->message_out.setVariable<float>(v::z, FLAMEGPU->getVariable<float>(v::z));
-
         // Set the message key, the house hold idx for bucket messaging @Todo
         // FLAMEGPU->message_out.setKey(householdIdx);
     }
@@ -71,11 +65,6 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBruteForce, flamegpu
 
     // @todo - this will need to change for contact tracing, the message interaction will need to occur regardless.
     if (infectionState == disease::SEIR::Susceptible) {
-        // Agent position
-        float agent_x = FLAMEGPU->getVariable<float>(v::x);
-        float agent_y = FLAMEGPU->getVariable<float>(v::y);
-        // float agent_z = FLAMEGPU->getVariable<float>(v::z);
-
         // Variable to store the duration of the exposed phase (if exposed)
         float stateDuration = 0.f;
 
@@ -137,11 +126,6 @@ FLAMEGPU_AGENT_FUNCTION(emitWorkplaceStatus, flamegpu::MessageNone, flamegpu::Me
         INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE));
         FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC));
 
-        // Location if used for comms
-        // FLAMEGPU->message_out.setVariable<float>(v::x, FLAMEGPU->getVariable<float>(v::x));
-        // FLAMEGPU->message_out.setVariable<float>(v::y, FLAMEGPU->getVariable<float>(v::y));
-        // FLAMEGPU->message_out.setVariable<float>(v::z, FLAMEGPU->getVariable<float>(v::z));
-
         // Set the message key, the house hold idx for bucket messaging @Todo
         // FLAMEGPU->message_out.setKey(householdIdx);
     }
@@ -185,11 +169,6 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBruteForce, flamegpu
 
     // @todo - this will need to change for contact tracing, the message interaction will need to occur regardless.
     if (infectionState == disease::SEIR::Susceptible) {
-        // Agent position
-        float agent_x = FLAMEGPU->getVariable<float>(v::x);
-        float agent_y = FLAMEGPU->getVariable<float>(v::y);
-        // float agent_z = FLAMEGPU->getVariable<float>(v::z);
-
         // Variable to store the duration of the exposed phase (if exposed)
         float stateDuration = 0.f;
 
@@ -232,10 +211,9 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBruteForce, flamegpu
     return flamegpu::ALIVE;
 }
 
-void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params, const float width, const float interactionRadius) {
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params) {
     // Define related model environment properties (@todo - abstract these somewhere more appropriate at a later date)
     flamegpu::EnvironmentDescription env = model.Environment();
-    env.newProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
 
     // @todo this should probably be refactored elsewhere (although used in this file currently)
     // Define the base probability of being exposed if interacting with an infected individual
@@ -278,10 +256,12 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_SIZE);
 
-    // @todo - temp or vis only?
+#if defined(FLAMEGPU_VISUALISATION)
+    // @vis only
     agent.newVariable<float>(person::v::x);
     agent.newVariable<float>(person::v::y);
     agent.newVariable<float>(person::v::z);
+#endif  // defined(FLAMEGPU_VISUALISATION)
 
     // Define relevant messages
     // Message list containing a persons current status for households (id, location, infection status)

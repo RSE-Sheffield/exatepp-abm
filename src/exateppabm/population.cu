@@ -12,6 +12,7 @@
 #include "exateppabm/disease.h"
 #include "exateppabm/person.h"
 #include "exateppabm/input.h"
+#include "exateppabm/util.h"
 
 namespace exateppabm {
 namespace population {
@@ -21,25 +22,6 @@ namespace {
 // File-scoped array  contianing the number of infected agents per demographic from population initialisation. This needs to be made accessible to a FLAME GPU Init func due to macro environment property limitations.
 
 std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
-
-
-/**
- * in-place inclusive scan, for libstdc++ which does not support c++17 (i.e. GCC 8)
- */
-template <typename T>
-void inplace_inclusive_scan(T& container) {
-    // @todo - use cmake to detect which path needs taking
-    // std::inclusive_scan(container.begin(), container.end(), container.begin());
-    // return;
-    // @todo - refactor this into a testable method, in a util namespace?
-    if (container.size() <= 1) {
-        return;
-    }
-    // Naive in-place inclusive scan for libstc++8
-    for (size_t i = 1; i < container.size(); ++i) {
-        container[i] = container[i - 1] + container[i];
-    }
-}
 
 }  // namespace
 
@@ -85,7 +67,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     }};
     // Perform an inclusive scan to convert to cumulative probability
     // Using a local method which supports inclusive scans in old libstc++
-    inplace_inclusive_scan(demographicProbabilties);
+    exateppabm::util::inplace_inclusive_scan(demographicProbabilties);
     // std::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
     std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
         demographics::Age::AGE_0_9,

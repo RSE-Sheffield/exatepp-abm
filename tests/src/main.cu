@@ -1,5 +1,5 @@
 #include <cstdio>
-// Include google test 
+// Include google test
 #include "gtest/gtest.h"
 // Include flame gpu telemetry header to prevent every test from triggering a telemetry API call.
 #include "flamegpu/io/Telemetry.h"

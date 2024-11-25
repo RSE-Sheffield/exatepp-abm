@@ -70,6 +70,15 @@ if(CMAKE_VERSION VERSION_LESS "3.25.0")
     target_compile_options(${LIBRARY_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CUDA>:SHELL:-Xcudafe --diag_suppress=128>")
 endif()
 
+# Check for std::inclusive_scan, and set a public definition as required
+include(${CMAKE_CURRENT_SOURCE_DIR}/../cmake/checkcxx/inclusive_scan.cmake)
+if (EXATEPP_ABM_check_inclusive_scan_RESULT)
+    target_compile_definitions(${LIBRARY_NAME} PUBLIC "-DEXATEPP_ABM_USE_STD_INCLUSIVE_SCAN=1")
+else()
+    target_compile_definitions(${LIBRARY_NAME} PUBLIC "-DEXATEPP_ABM_USE_STD_INCLUSIVE_SCAN=0")
+endif()
+
+
 # Enable host device constexpr?
 target_compile_options(${LIBRARY_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
 

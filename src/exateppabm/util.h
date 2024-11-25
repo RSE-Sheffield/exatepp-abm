@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <numeric>
 
 namespace exateppabm {
 namespace util {
@@ -53,6 +54,43 @@ bool getSeatbeltsEnabled();
  * @return string representation of the build configuration
  */
 std::string getCMakeBuildType();
+
+
+/**
+ * Perform an inclusive scan on an interable (i.e. std::array<float>), without using std::inclusive_scan which although part of c++17 is not available in some older stdlib implementations (i.e. gcc 8). 
+ */
+
+/**
+ * In-place inclusive scan, for libstdc++ which does not support c++17 (i.e. GCC 8)
+ * 
+ * equivalent to std::inclusive_scan(container.begin(), container.end(), container.begin());
+ * 
+ * @param container iterable container / something with size() and operator[]
+ */
+template <typename T>
+void naive_inplace_inclusive_scan(T& container) {
+    if (container.size() <= 1) {
+        return;
+    }
+    // Naive in-place inclusive scan for libstc++8
+    for (size_t i = 1; i < container.size(); ++i) {
+        container[i] = container[i - 1] + container[i];
+    }
+}
+
+/**
+ * In-place inclusive scan, using std::inclusive_scan if possible, else a naive implementation.
+ * 
+ * equivalent to std::inclusive_scan(container.begin(), container.end(), container.begin());
+ */
+template <typename T>
+void inplace_inclusive_scan(T& container) {
+#if defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+    std::inclusive_scan(container.begin(), container.end(), container.begin());
+#else
+    naive_inplace_inclusive_scan(container);
+#endif  // defined(EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN) && EXATEPP_ABM_USE_STD_INCLUSIVE_SCAN
+}
 
 }  // namespace util
 }  // namespace exateppabm

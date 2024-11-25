@@ -32,7 +32,7 @@ include(${FLAMEGPU_ROOT}/cmake/common.cmake)
 # List test source files
 set(TESTS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cu
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/temp.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exateppabm/test_util.cu
 )
 
 # Define output location of binary files

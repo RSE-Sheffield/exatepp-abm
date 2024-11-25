@@ -68,7 +68,7 @@ std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, co
         householdSizeProbability[idx] = countPerSize[idx] / static_cast<double>(sumConfigHouseholdSizes);
     }
     // Perform an inclusive scan to convert to cumulative probability
-    std::inclusive_scan(householdSizeProbability.begin(), householdSizeProbability.end(), householdSizeProbability.begin());
+    exateppabm::util::inplace_inclusive_scan(householdSizeProbability);
 
     std::uniform_real_distribution<double> dist(0.0, 1.0);
 

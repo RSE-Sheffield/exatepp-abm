@@ -9,7 +9,7 @@ if(TARGET exatepp_abm)
     # Test running exatepp_abm without any cli succeeds (returns 0 error code)
     add_test(
         NAME integration.defaultArgs
-        COMMAND exatepp_abm --console-mode
+        COMMAND exatepp_abm
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     set_tests_properties(integration.defaultArgs PROPERTIES LABELS "integration")

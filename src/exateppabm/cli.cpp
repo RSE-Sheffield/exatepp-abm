@@ -22,7 +22,9 @@ void print(const exateppabm::cli::params params) {
     fmt::print("  device = {}\n", params.device);
     fmt::print("  verbosity = {}\n", params.verbosity);
     fmt::print("  inputParamFile = {}\n", params.inputParamFile);
+    fmt::print("  inputParamLine = {}\n", params.inputParamLine);
     fmt::print("  outputDir = {}\n", params.outputDir);
+    fmt::print("  individualFile = {}\n", params.individualFile);
     fmt::print("}}\n");
 }
 

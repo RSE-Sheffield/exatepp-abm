@@ -6,6 +6,7 @@
 #include <numeric>
 #include <memory>
 #include <random>
+#include <array>
 #include <vector>
 
 #include "exateppabm/demographics.h"
@@ -19,7 +20,7 @@ namespace population {
 
 namespace {
 
-// File-scoped array  contianing the number of infected agents per demographic from population initialisation. This needs to be made accessible to a FLAME GPU Init func due to macro environment property limitations.
+// File-scoped array  containing the number of infected agents per demographic from population initialisation. This needs to be made accessible to a FLAME GPU Init func due to macro environment property limitations.
 
 std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
 
@@ -31,7 +32,7 @@ std::array<std::uint64_t, demographics::AGE_COUNT> infectedPerDemographic = {};
  * This is not how the reference model initialises households, and this is intended to be replaced in #6 when more advanced network initialisation is implemented.
  *
  * @note max house size is 6, does not allow for 6+ as in reference data
- * @note final generated housesize will be reduced to not be too large, slighlty skewing the distribution
+ * @note final generated housesize will be reduced to not be too large, slightly skewing the distribution
  */
 template <typename T>
 std::vector<T> generateHouseholdSizes(const exateppabm::input::config config, const bool verbose, std::mt19937_64 & rng) {
@@ -136,43 +137,18 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     std::shuffle(infected_vector.begin(), infected_vector.end(), rng);
 
     // Prepare a probability matrix for selecting an age demographic for the agent based on the ratio from the configuration.
-    // @todo abstract this into class/methods.
-    // @todo - this hardcoded 9 is a bit grim. Maybe enums can help?
-    std::uint64_t configDemographicSum = config.population_0_9 + config.population_10_19 + config.population_20_29 + config.population_30_39 + config.population_40_49 + config.population_50_59 + config.population_60_69 + config.population_70_79 + config.population_80;
-    // @todo - map might be more readable than an array (incase the underlying class enum values are ever changed to be a different order?)
-    std::array<float, demographics::AGE_COUNT> demographicProbabilties =  {{
-        config.population_0_9 / static_cast<float>(configDemographicSum),
-        config.population_10_19 / static_cast<float>(configDemographicSum),
-        config.population_20_29 / static_cast<float>(configDemographicSum),
-        config.population_30_39 / static_cast<float>(configDemographicSum),
-        config.population_40_49 / static_cast<float>(configDemographicSum),
-        config.population_50_59 / static_cast<float>(configDemographicSum),
-        config.population_60_69 / static_cast<float>(configDemographicSum),
-        config.population_70_79 / static_cast<float>(configDemographicSum),
-        config.population_80 / static_cast<float>(configDemographicSum)
-    }};
-    // Perform an inclusive scan to convert to cumulative probability
-    // Using a local method which supports inclusive scans in old libstc++
-    exateppabm::util::inclusive_scan(demographicProbabilties.begin(), demographicProbabilties.end(), demographicProbabilties.begin());
-    std::array<demographics::Age, demographics::AGE_COUNT> allDemographics = {{
-        demographics::Age::AGE_0_9,
-        demographics::Age::AGE_10_19,
-        demographics::Age::AGE_20_29,
-        demographics::Age::AGE_30_39,
-        demographics::Age::AGE_40_49,
-        demographics::Age::AGE_50_59,
-        demographics::Age::AGE_60_69,
-        demographics::Age::AGE_70_79,
-        demographics::Age::AGE_80
-    }};
+    // @todo - map might be more readable than an array (in case the underlying class enum values are ever changed to be a different order?)
+    auto ageDemographicProbabilties = demographics::getAgeDemographicCumulativeProbabilityArray(config);
+    // Get an array of each enum, to map from integer age demographic to the enum
+    auto allAgeDemographics = demographics::getAllAgeDemographics();
 
     // per demo total is not an output in time series.
     // Alternately, we need to initialise the exact number of each age band, not RNG, and just scale it down accordingly. Will look at in "realistic" population generation
     std::array<std::uint64_t, demographics::AGE_COUNT> createdPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
     // reset per demographic count of the number initialised agents in each infection state.
+    // This is used for the initial value in time series data, without having to iterate all agent data again, but may not be thread safe (i.e. proabably need to change for ensembles)
     infectedPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
-
-    std::uniform_real_distribution<float> demo_dist(0.0f, 1.0f);
+    std::uniform_real_distribution<float> age_dist(0.0f, 1.0f);
 
     // Generate a vector containing the number of individuals for each household
     auto householdSizes = generateHouseholdSizes<std::uint8_t>(config, verbose, rng);
@@ -223,12 +199,12 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
 
         // Demographic
         // @todo - this is a bit grim, enum class aren't as nice as hoped.
-        float demo_random = demo_dist(rng);
+        float age_random = age_dist(rng);
         // @todo - abstract this into a method.
-        demographics::Age demo = demographics::Age::AGE_0_9;
+        demographics::Age age = demographics::Age::AGE_0_9;
         for (demographics::AgeUnderlyingType i = 0; i < demographics::AGE_COUNT; i++) {
-            if (demo_random < demographicProbabilties[i]) {
-                demo = allDemographics[i];
+            if (age_random < ageDemographicProbabilties[i]) {
+                age = allAgeDemographics[i];
                 createdPerDemographic[i]++;
                 if (infectionStatus == disease::SEIR::Infected) {
                     infectedPerDemographic[i]++;
@@ -236,7 +212,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
                 break;
             }
         }
-        person.setVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC, demo);
+        person.setVariable<demographics::AgeUnderlyingType>(exateppabm::person::v::AGE_DEMOGRAPHIC, age);
 
         // Household assignment
         std::uint32_t householdIdx = householdIndexPerPerson[idx];

@@ -41,5 +41,21 @@ enum Age : AgeUnderlyingType {
  */
 void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params);
 
+/**
+ * Get an array containing one of each age demographic enum
+ * 
+ * This is a workaround for the lack of reflection in c++17, used to simplify code elsewhere
+ * @todo constexpr? return refernce?
+ * @return std::array which is the inverse of the Age enum.
+ */
+std::array<demographics::Age, demographics::AGE_COUNT> getAllAgeDemographics();
+
+/**
+ * Generate a cumulative probabillity distribution for age demographic sampling for a given simulation configuration
+ * @param params model configuration parameters
+ * @return per-age demographic cumulative probability, for sampling with a uniform distribution [0, 1)
+ */
+std::array<float, demographics::AGE_COUNT> getAgeDemographicCumulativeProbabilityArray(const exateppabm::input::config& params);
+
 }  // namespace demographics
 }  // namespace exateppabm

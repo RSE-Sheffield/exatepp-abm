@@ -1,11 +1,85 @@
 #include <array>
 #include <numeric>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
 
 #include "fmt/core.h"
 #include "exateppabm/util.h"
+
+
+/**
+ * Check that getGPUName doesn't cause an error, and should not return the "unknown" string (although might, but in that case something is wrong with the system)
+ */
+TEST(TestUtil, getGPUName) {
+    // Method returns a string, shouldn't be unknown, as we assume there is atleast one gpu.
+    std::string gpuName = exateppabm::util::getGPUName(0);
+    ASSERT_NE(gpuName, "");
+    ASSERT_NE(gpuName, "unknown");
+    // No machines should include INT_MAX GPUs, so it should return "unknown"
+    std::string invalid = exateppabm::util::getGPUName(INT_MAX);
+    ASSERT_EQ(invalid, "unknown");
+}
+
+/**
+ * Test the getting of SM count method, as we cannot hardcode the expected number, we can just assume it should be non zero for device 0
+ * This is a bit of a flakey test
+ */
+TEST(TestUtil, getGPUMultiProcessorCount) {
+    // Assuming the current machine has a gpu, should return a value >= 0
+    auto result = exateppabm::util::getGPUMultiProcessorCount(0);
+    ASSERT_GE(result, 0);
+    // No machines should include INT_MAX GPUs, so it should return 0
+    auto invalid = exateppabm::util::getGPUMultiProcessorCount(INT_MAX);
+    ASSERT_EQ(invalid, 0);
+}
+
+/**
+ * Test that getting GPU memory capacity behaves roughly as expected, for sensible and not-sensible device ordinals.
+ */
+TEST(TestUtil, getGPUMemory) {
+    // Assuming the current machine has a gpu, should return a value >= 0
+    auto result = exateppabm::util::getGPUMemory(0);
+    ASSERT_GE(result, 0u);
+    // No machines should include INT_MAX GPUs, so it should return "unknown"
+    auto invalid = exateppabm::util::getGPUMemory(INT_MAX);
+    ASSERT_EQ(invalid, 0u);
+}
+
+/**
+ * Initialising the CUDA context has no direct effects, only side effects which are difficult to observe without digging into the CUDA Driver API.
+* For now, just make sure the method doesn't trigger any execeptions
+ */
+TEST(TestUtil, initialiseCUDAContext) {
+    ASSERT_NO_THROW(exateppabm::util::initialiseCUDAContext(0));
+}
+
+/**
+ * Test that getting the seatbelts value behaves correctly
+ */
+TEST(TestUtil, getSeatbeltsEnabled) {
+    auto value = exateppabm::util::getSeatbeltsEnabled();
+    #if !defined(FLAMEGPU_SEATBELTS) || FLAMEGPU_SEATBELTS
+        ASSERT_EQ(value, true);
+    #else  // !defined(FLAMEGPU_SEATBELTS) || FLAMEGPU_SEATBELTS
+        ASSERT_EQ(value, false);
+    #endif  // !defined(FLAMEGPU_SEATBELTS) || FLAMEGPU_SEATBELTS
+}
+
+/**
+ * Test that getting the CMake build type value behaves correctly
+ */
+TEST(TestUtil, getCMakeBuildType) {
+    auto value = exateppabm::util::getCMakeBuildType();
+#if defined(CMAKE_BUILD_TYPE)
+    ASSERT_EQ(value, CMAKE_BUILD_TYPE);
+#else  // defined(CMAKE_BUILD_TYPE)
+    // If this occurs, the CMake is broken so we will trigger a failure.
+    ASSERT_FALSE(true);
+#endif  // defined(CMAKE_BUILD_TYPE)
+}
+
 
 /**
  * Test the naive inplace inclusive_scan implementation for an array of integers

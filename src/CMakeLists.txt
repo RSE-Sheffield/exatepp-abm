@@ -86,10 +86,10 @@ endif()
 target_compile_options(${LIBRARY_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
 
 # Forward on the cmake build type as a macro definition, for performance output files. There's prolly a cleaner way to do this.
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:Release>:CMAKE_BUILD_TYPE=\"Release\">")
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:RelWithDebInfo>:CMAKE_BUILD_TYPE=\"RelWithDebInfo\">")
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:MinSizeRel>:CMAKE_BUILD_TYPE=\"MinSizeRel\">")
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:Debug>:CMAKE_BUILD_TYPE=\"Debug\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:Release>:CMAKE_BUILD_TYPE=\"Release\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:RelWithDebInfo>:CMAKE_BUILD_TYPE=\"RelWithDebInfo\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:MinSizeRel>:CMAKE_BUILD_TYPE=\"MinSizeRel\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:Debug>:CMAKE_BUILD_TYPE=\"Debug\">")
 
 # Add src directory to include path, publicly so that the target library inherits this dependency (for now).
 target_include_directories("${LIBRARY_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

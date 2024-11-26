@@ -11,7 +11,7 @@ namespace person {
 /**
  * Agent function for person agents to emit their public information, i.e. infection status to their household
  */
-FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
+FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::MessageBucket) {
     // Households of 1 don't need to do any messaging, there is no one to infect
     std::uint8_t householdSize = FLAMEGPU->getVariable<std::uint8_t>(v::HOUSEHOLD_SIZE);
     if (householdSize > 1) {
@@ -28,7 +28,7 @@ FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::Me
         INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE));
         FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC));
         // Set the message key, the house hold idx for bucket messaging @Todo
-        // FLAMEGPU->message_out.setKey(householdIdx);
+        FLAMEGPU->message_out.setKey(householdIdx);
     }
     return flamegpu::ALIVE;
 }
@@ -41,7 +41,7 @@ FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::Me
  * @todo - refactor this somewhere else?
  * @todo - add per network behaviours?
  */
-FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBruteForce, flamegpu::MessageNone) {
+FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBucket, flamegpu::MessageNone) {
     // Get my ID to avoid self messages
     const flamegpu::id_t id = FLAMEGPU->getID();
 
@@ -69,7 +69,7 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBruteForce, flamegpu
         float stateDuration = 0.f;
 
         // Iterate messages from anyone within my spatial neighbourhood (i.e. cuboid not sphere)
-        for (const auto &message : FLAMEGPU->message_in) {
+        for (const auto &message : FLAMEGPU->message_in(householdIdx)) {
             // Ignore self messages (can't infect oneself)
             if (message.getVariable<flamegpu::id_t>(message::household_status::ID) != id) {
                 // Ignore messages from other households
@@ -109,7 +109,7 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBruteForce, flamegpu
 /**
  * Agent function for person agents to emit their public information, i.e. infection status, to their workplace colleagues
  */
-FLAMEGPU_AGENT_FUNCTION(emitWorkplaceStatus, flamegpu::MessageNone, flamegpu::MessageBruteForce) {
+FLAMEGPU_AGENT_FUNCTION(emitWorkplaceStatus, flamegpu::MessageNone, flamegpu::MessageBucket) {
     // workplaces of 1 don't need to do any messaging, there is no one to infect
     std::uint32_t workplaceSize = FLAMEGPU->getVariable<std::uint32_t>(v::WORKPLACE_SIZE);
     if (workplaceSize > 1) {
@@ -127,7 +127,7 @@ FLAMEGPU_AGENT_FUNCTION(emitWorkplaceStatus, flamegpu::MessageNone, flamegpu::Me
         FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC));
 
         // Set the message key, the house hold idx for bucket messaging @Todo
-        // FLAMEGPU->message_out.setKey(householdIdx);
+        FLAMEGPU->message_out.setKey(workplaceIdx);
     }
     return flamegpu::ALIVE;
 }
@@ -140,7 +140,7 @@ FLAMEGPU_AGENT_FUNCTION(emitWorkplaceStatus, flamegpu::MessageNone, flamegpu::Me
  * @todo - refactor this somewhere else?
  * @todo - add per network behaviours?
  */
-FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBruteForce, flamegpu::MessageNone) {
+FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBucket, flamegpu::MessageNone) {
     // Get my ID to avoid self messages
     const flamegpu::id_t id = FLAMEGPU->getID();
 
@@ -173,7 +173,7 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBruteForce, flamegpu
         float stateDuration = 0.f;
 
         // Iterate messages from anyone within my spatial neighbourhood (i.e. cuboid not sphere)
-        for (const auto &message : FLAMEGPU->message_in) {
+        for (const auto &message : FLAMEGPU->message_in(workplaceIdx)) {
             // Ignore self messages (can't infect oneself)
             if (message.getVariable<flamegpu::id_t>(message::household_status::ID) != id) {
                 // Ignore messages from other households
@@ -265,8 +265,11 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // Define relevant messages
     // Message list containing a persons current status for households (id, location, infection status)
-    fmt::print("@todo - use bucket messaging not brute force for household comms.\n");  // However, this requires knowing the maximum number of houses here, which is not known yet or for ensembles. Worst case would be the number of people?
-    flamegpu::MessageBruteForce::Description householdStatusMessage = model.newMessage<flamegpu::MessageBruteForce>(person::message::household_status::_NAME);
+    flamegpu::MessageBucket::Description householdStatusMessage = model.newMessage<flamegpu::MessageBucket>(person::message::household_status::_NAME);
+
+    // Set the maximum bucket index to the population size. Ideally this would be household count, but that is not known at model definition time.
+    // In the future this would be possible once https://github.com/FLAMEGPU/FLAMEGPU2/issues/710 is implemented
+    householdStatusMessage.setUpperBound(params.n_total);
 
     // Add the agent id to the message.
     householdStatusMessage.newVariable<flamegpu::id_t>(person::message::household_status::ID);
@@ -278,8 +281,11 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     householdStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
 
     // Message list containing a persons current status for workplaces (id, location, infection status)
-    fmt::print("@todo - use bucket messaging not brute force for household comms.\n");  // However, this requires knowing the maximum number of houses here, which is not known yet or for ensembles. Worst case would be the number of people?
-    flamegpu::MessageBruteForce::Description workplaceStatusMessage = model.newMessage<flamegpu::MessageBruteForce>(person::message::workplace_status::_NAME);
+    flamegpu::MessageBucket::Description workplaceStatusMessage = model.newMessage<flamegpu::MessageBucket>(person::message::workplace_status::_NAME);
+
+    // Set the maximum bucket index to the population size, to the maximum number of workplace networks
+    // @todo - this will be replaced with a per-person message when improved network messaging is implemented (where individuals will communicate with their direct network)
+    workplaceStatusMessage.setUpperBound(3);  // params.n_total);
 
     // Add the agent id to the message.
     workplaceStatusMessage.newVariable<flamegpu::id_t>(person::message::workplace_status::ID);

@@ -51,7 +51,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 std::array<demographics::Age, demographics::AGE_COUNT> getAllAgeDemographics();
 
 /**
- * Generate a cumulative probabillity distribution for age demographic sampling for a given simulation configuration
+ * Generate a cumulative probability distribution for age demographic sampling for a given simulation configuration
  * @param params model configuration parameters
  * @return per-age demographic cumulative probability, for sampling with a uniform distribution [0, 1)
  */

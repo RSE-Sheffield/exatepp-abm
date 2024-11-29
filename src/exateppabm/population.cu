@@ -173,7 +173,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
 
     // If this is a visualisation enabled build, set their x/y/z
 #if defined(FLAMEGPU_VISUALISATION)
-        exateppabm::visualisation::initialiseAgentPopulation(model, params, pop, static_cast<std::uint32_t>(householdSizes.size()));
+        exateppabm::visualisation::initialiseAgentPopulation(model, params, pop, static_cast<std::uint32_t>(households.size()));
 #endif  // defined(FLAMEGPU_VISUALISATION)
 
     if (verbose) {

@@ -192,6 +192,11 @@ struct config {
      */
     float relative_transmission_occupation = 1.0f;
     /**
+     * Relative transmission rate for interactions within the random daily network 
+     * Arbitrary default value
+     */
+    float relative_transmission_random = 1.0f;
+    /**
      * Fraction of people in work network interacted with per day (by rng sampling)
      * 
      * @todo - this probably needs using differntly with more realistic networks

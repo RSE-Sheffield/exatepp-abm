@@ -211,6 +211,9 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->relative_transmission_occupation)) {
                 throw std::runtime_error("bad value for relative_transmission_occupation during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->relative_transmission_random)) {
+                throw std::runtime_error("bad value for relative_transmission_random during csv parsing @todo\n");
+            }
             if (!valueFromCSVLine(line, c->daily_fraction_work)) {
                 throw std::runtime_error("bad value for daily_fraction_work during csv parsing @todo\n");
             }
@@ -270,6 +273,7 @@ void print(exateppabm::input::config config) {
     fmt::print("  elderly_network_adults = {}\n", config.elderly_network_adults);
     fmt::print("  relative_transmission_household = {}\n", config.relative_transmission_household);
     fmt::print("  relative_transmission_occupation = {}\n", config.relative_transmission_occupation);
+    fmt::print("  relative_transmission_random = {}\n", config.relative_transmission_occupation);
     fmt::print("  daily_fraction_work = {}\n", config.daily_fraction_work);
     fmt::print("}}\n");
 }

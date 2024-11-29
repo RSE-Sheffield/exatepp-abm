@@ -121,7 +121,7 @@ Source code linting required `cpplint` to be installed and on your path at CMake
 Linting can be initiated via cmake, i.e from a build directory:
 
 ```bash
-cmake --build . --target lint`
+cmake --build . --target lint
 ```
 
 ## Documentation

@@ -2,7 +2,7 @@
 
 A GPU accelerated Agent-Based Model (ABM) of infection disease spread within a population.
 
-Implemented using [FLAMEGPU/FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2), with model functionality inspired by [https://github.com/BDI-pathogens/OpenABM-Covid19](BDI-pathogens/OpenABM-Covid19).
+Implemented using [FLAMEGPU/FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2), with model functionality inspired by [BDI-pathogens/OpenABM-Covid19](https://github.com/BDI-pathogens/OpenABM-Covid19).
 
 ## Requirements / Dependencies
 

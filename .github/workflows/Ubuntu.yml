@@ -1,0 +1,125 @@
+# Compile project on Ubuntu
+name: Ubuntu
+
+on:
+  # Branch pushes that do not only modify other workflow files
+  push:
+    branches:
+      - '**'
+    paths:
+      - "**"
+      - "!.github/**"
+      - ".github/scripts/install_cuda_ubuntu.sh"
+      - ".github/workflows/Ubuntu.yml"
+  # Allow manual invocation.
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ${{ matrix.cudacxx.os }}
+    strategy:
+      fail-fast: false
+      # Multiplicative build matrix
+      # optional exclude: can be partial, include: must be specific
+      matrix:
+        cudacxx:
+          # CUDA 12.6 with gcc 12 on 24.04
+          - cuda: "12.6"
+            cuda_arch: "52"
+            hostcxx: gcc-12
+            os: ubuntu-24.04
+          # CUDA 12.0 with gcc 11 on 22.04
+          - cuda: "12.0"
+            cuda_arch: "52"
+            hostcxx: gcc-11
+            os: ubuntu-22.04
+          # CUDA 11.8 with GCC 10
+          - cuda: "11.8"
+            cuda_arch: "52"
+            hostcxx: gcc-10
+            os: ubuntu-22.04
+          # CUDA 11.6 with GCC 9 on 20.04
+          - cuda: "11.6"
+            cuda_arch: "35"
+            hostcxx: gcc-9
+            os: ubuntu-20.04
+          # CUDA 11.5, with GCC 8 on Ubuntu 20.04 to try and prevent use of C++17 features not present in gcc 8 
+          - cuda: "11.5"
+            cuda_arch: "35"
+            hostcxx: gcc-8
+            os: ubuntu-20.04
+          # CUDA 11.2 does not allow cuda constrexpr __device__ variables, which requires CUDA 11.5+ 
+          # - cuda: "11.2"
+          #   cuda_arch: "35"
+          #   hostcxx: gcc-8
+          #   os: ubuntu-20.04
+
+    # Name the job based on matrix/env options
+    name: "build (${{ matrix.cudacxx.cuda }}, ${{ matrix.cudacxx.hostcxx }}, ${{ matrix.cudacxx.os }})"
+
+    # Define job-wide env constants, and promote matrix elements to env constants for portable steps.
+    env:
+      # Define constants
+      BUILD_DIR: "build"
+      # Port matrix options to environment, for more portability.
+      CUDA: ${{ matrix.cudacxx.cuda }}
+      CUDA_ARCH: ${{ matrix.cudacxx.cuda_arch }}
+      HOSTCXX: ${{ matrix.cudacxx.hostcxx }}
+      OS: ${{ matrix.cudacxx.os }}
+      CONFIG: ${{ matrix.config.config }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install CUDA
+      if: ${{ startswith(env.OS, 'ubuntu') && env.CUDA != '' }}
+      env:
+        cuda: ${{ env.CUDA }}
+      run: .github/scripts/install_cuda_ubuntu.sh
+
+    - name: Install/Select gcc and g++
+      if: ${{ startsWith(env.HOSTCXX, 'gcc-') }}
+      run: |
+        gcc_version=${HOSTCXX//gcc-/}
+        sudo apt-get install -y gcc-${gcc_version} g++-${gcc_version}
+        echo "CC=/usr/bin/gcc-${gcc_version}" >> $GITHUB_ENV
+        echo "CXX=/usr/bin/g++-${gcc_version}" >> $GITHUB_ENV
+        echo "CUDAHOSTCXX=/usr/bin/g++-${gcc_version}" >> $GITHUB_ENV
+
+    - name: Add custom problem matchers for annotations
+      run: echo "::add-matcher::.github/problem-matchers.json"
+
+    - name: Enable git safe-directory
+      run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+    - name: Configure cmake
+      run: >
+        cmake . -B "${{ env.BUILD_DIR }}"
+        -DCMAKE_BUILD_TYPE="Release"
+        -Wno-dev
+        -DCMAKE_WARN_DEPRECATED="OFF" 
+        -DFLAMEGPU_WARNINGS_AS_ERRORS="ON"
+        -DCMAKE_CUDA_ARCHITECTURES="${{ env.CUDA_ARCH }}"
+        -DBUILD_TESTING="ON"
+
+    - name: Build flamegpu
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target flamegpu --verbose -j `nproc`
+
+    - name: Build the simulation binary
+      if: ${{ env.FLAMEGPU_BUILD_PYTHON == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target exatepp_abm --verbose -j `nproc`
+
+    - name: Build the c++ test suite
+      if: ${{ env.FLAMEGPU_BUILD_TESTS == 'ON' }}
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target tests --verbose -j `nproc`
+
+    - name: Build any remaining targets
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target all --verbose -j `nproc`

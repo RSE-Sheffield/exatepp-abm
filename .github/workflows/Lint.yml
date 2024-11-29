@@ -1,0 +1,66 @@
+# Lint the project using cpplint, this currently requires CUDA for CMake configuration to succeed
+name: Lint
+
+on:
+  # Branch pushes that do not only modify other workflow files
+  push:
+    branches:
+      - '**'
+    paths:
+      - "**"
+      - "!.github/**"
+      - ".github/scripts/install_cuda_ubuntu.sh"
+      - ".github/workflows/Lint.yml"
+  # Allow manual invocation.
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  cpplint:
+    runs-on: ${{ matrix.cudacxx.os }}
+    name: "cpplint (${{ matrix.cudacxx.cuda }}, ${{ matrix.cudacxx.os }})"
+    strategy:
+      fail-fast: false
+      # Multiplicative build matrix
+      # optional exclude: can be partial, include: must be specific
+      matrix:
+        cudacxx:
+          - cuda: "12.0"
+            os: ubuntu-22.04
+    env:
+      # Define constants
+      BUILD_DIR: "build"
+      CUDA: ${{ matrix.cudacxx.cuda }}
+      OS: ${{ matrix.cudacxx.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install CUDA
+      if: ${{ startswith(env.OS, 'ubuntu') && env.CUDA != '' }}
+      env:
+        cuda: ${{ env.CUDA }}
+      run: .github/scripts/install_cuda_ubuntu.sh
+
+    - name: Install cpplint
+      run: |
+        python3 -m pip install cpplint
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Add custom problem matchers for annotations
+      run: echo "::add-matcher::.github/problem-matchers.json"
+
+    - name: Configure cmake
+      run: >
+        cmake . -B "${{ env.BUILD_DIR }}"
+        -Wno-dev
+        -DCMAKE_WARN_DEPRECATED="OFF"
+        -DFLAMEGPU_WARNINGS_AS_ERRORS="ON"
+        -DBUILD_TESTING="ON"
+
+    - name: Lint
+      working-directory: ${{ env.BUILD_DIR }}
+      run: cmake --build . --target lint --verbose -j `nproc` 

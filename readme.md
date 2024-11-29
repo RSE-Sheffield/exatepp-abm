@@ -6,11 +6,11 @@ Implemented using [FLAMEGPU/FLAMEGPU2](https://github.com/FLAMEGPU/FLAMEGPU2), w
 
 ## Requirements / Dependencies
 
-This has the same requirements/dependencies as FLAME GPU 2
+This has the same requirements/dependencies as FLAME GPU 2, except for CUDA which instead requires >= 11.5 currently (due to use of `constexpr __device__`);
 
 + [CMake](https://cmake.org/download/) `>= 3.18`
   + `>= 3.20` if building python bindings using a multi-config generator (Visual Studio, Eclipse or Ninja Multi-Config)
-+ [CUDA](https://developer.nvidia.com/cuda-downloads) `>= 11.0` and a [Compute Capability](https://developer.nvidia.com/cuda-gpus) `>= 3.5` NVIDIA GPU.
++ [CUDA](https://developer.nvidia.com/cuda-downloads) `>= 11.5` and a [Compute Capability](https://developer.nvidia.com/cuda-gpus) `>= 3.5` NVIDIA GPU.
 + C++17 capable C++ compiler (host), compatible with the installed CUDA version
   + [Microsoft Visual Studio 2019 or 2022](https://visualstudio.microsoft.com/) (Windows)
   + [make](https://www.gnu.org/software/make/) and [GCC](https://gcc.gnu.org/) `>= 8.1` (Linux)

@@ -148,7 +148,7 @@ TEST(TestPopulation, getHouseholdSizeCumulativeProbabilityVector) {
 TEST(TestPopulation, generateHouseholdStructures) {
     const double EPSILON = 1.0e-7;
     std::vector<exateppabm::population::HouseholdStructure> households;
-    std::mt19937_64 rng = {};
+    std::mt19937_64 rng = std::mt19937_64(0);
     exateppabm::input::config params = {};
     std::uint64_t totalPeople = 0;
 
@@ -170,7 +170,7 @@ TEST(TestPopulation, generateHouseholdStructures) {
     params.population_60_69 = 0;
     params.population_70_79 = 0;
     params.population_80 = 0;
-    rng = std::mt19937_64(params.rng_seed);
+    rng.seed(params.rng_seed);
     households = exateppabm::population::generateHouseholdStructures(params, rng, false);
     // Should be 1 household
     ASSERT_EQ(households.size(), 1u);
@@ -220,7 +220,7 @@ TEST(TestPopulation, generateHouseholdStructures) {
     params.population_60_69 = 0;
     params.population_70_79 = 1;
     params.population_80 = 1;
-    rng = std::mt19937_64(params.rng_seed);
+    rng.seed(params.rng_seed);
     households = exateppabm::population::generateHouseholdStructures(params, rng, false);
     // Should be between 1 and 32 households
     ASSERT_GE(households.size(), 1u);

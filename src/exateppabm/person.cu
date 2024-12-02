@@ -15,7 +15,7 @@ FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::Me
     // Households of 1 don't need to do any messaging, there is no one to infect
     std::uint8_t householdSize = FLAMEGPU->getVariable<std::uint8_t>(v::HOUSEHOLD_SIZE);
     if (householdSize > 1) {
-        // output public properties to bucket message, keyed by household 
+        // output public properties to bucket message, keyed by household
         // Agent ID to avoid self messaging
         FLAMEGPU->message_out.setVariable<flamegpu::id_t>(person::message::household_status::ID, FLAMEGPU->getID());
 
@@ -214,21 +214,40 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBucket, flamegpu::Me
 
 /**
  * Update the per-day random daily interaction network
- * 
+ *
  * Individuals have a number of daily interactions, which is the same for the duration of th simulation.
  *
  * In serial on the host, generate a vector of interactions
- * 
+ *
  * @todo - more than one random interaction per day
  * @todo - prevent self-interactions
  * @todo - prevent duplicate interactions
  * @todo - more performance CPU implementation
- * @todo - GPU implementation of this (stable matching submodel?) 
+ * @todo - GPU implementation of this (stable matching submodel?)
  */
-
 FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
     // Get the current population of person agents
+    auto personAgent = FLAMEGPU->agent(exateppabm::person::NAME, exateppabm::person::states::DEFAULT);
+    flamegpu::DeviceAgentVector population = personAgent.getPopulationData();
 
+    // @temp - Interact with ID +/1 pair wise for now, as a temp fix.
+    if (FLAMEGPU->getStepCounter() == 0) {
+        for (auto person : population) {
+            flamegpu::id_t id = person.getID();
+            flamegpu::id_t other = flamegpu::ID_NOT_SET;
+            if (id % 2 == 0) {
+                other = id - 1;
+            } else {
+                other = id + 1;
+            }
+
+            person.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, 1u);
+            person.setVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS, other);  // @todo - multiple.
+        }
+    }
+
+
+    // @todo implement the following
     // Get the sum of the per-agent random interaction count, so we can reserve a large enough vector
 
     // Build a vector of interactions, initialised to contain the id of each agent as many times as they require
@@ -237,26 +256,23 @@ FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
 
     // Update agent data containing today's random interactions
     // @todo - support more than one interaction per agent per day.
-
 }
 
 /**
  * Agent function for person agents to emit their public information, i.e. infection status, for random daily network colleagues. This is put into a bucket key'd by the agent's ID.
- * 
+ *
  * @note the bucket message is from 1...N, rather than 0 to match ID index.
  */
-FLAMEGPU_AGENT_FUNCTION(emitRandomDailyNetworkStatus, flamegpu::MessageNone, flamegpu::MessageBucket) {
-
-    // output public properties to spatial message
-    // Agent ID to avoid self messaging
-    FLAMEGPU->message_out.setVariable<flamegpu::id_t>(person::message::workplace_status::ID, FLAMEGPU->getID());
+FLAMEGPU_AGENT_FUNCTION(emitRandomDailyNetworkStatus, flamegpu::MessageNone, flamegpu::MessageArray) {
+    // output public properties to array message
+    // FLAMEGPU->message_out.setVariable<flamegpu::id_t>(person::message::workplace_status::ID, FLAMEGPU->getID());
 
     FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(v::
     INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE));
     FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(v::AGE_DEMOGRAPHIC));
 
-    // Set the message key, the house hold idx for bucket messaging @Todo
-    FLAMEGPU->message_out.setKey(FLAMEGPU->getID());
+    // Set the message array message index to the agent's id.
+    FLAMEGPU->message_out.setIndex(FLAMEGPU->getID());
     return flamegpu::ALIVE;
 }
 
@@ -269,16 +285,13 @@ FLAMEGPU_AGENT_FUNCTION(emitRandomDailyNetworkStatus, flamegpu::MessageNone, fla
  * @todo - add per network behaviours?
  * @todo - leverage a FLAME GPU 2 network structure, when they are mutable per day.
  */
-FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageBucket, flamegpu::MessageNone) {
+FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flamegpu::MessageNone) {
     // Get my ID to avoid self messages
     const flamegpu::id_t id = FLAMEGPU->getID();
 
-    // Get the probability of interaction within the workplace
-    float p_daily_fraction_work = FLAMEGPU->environment.getProperty<float>("daily_fraction_work");
-
     // Get the probability of infection
     float p_s2e = FLAMEGPU->environment.getProperty<float>("p_interaction_susceptible_to_exposed");
-     // Scale it for workplace interactions
+     // Scale it for random daily interactions
     p_s2e *= FLAMEGPU->environment.getProperty<float>("relative_transmission_random");
 
     // Get my age demographic
@@ -296,13 +309,15 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageBucket, fla
         // Variable to store the duration of the exposed phase (if exposed)
         float stateDuration = 0.f;
 
-        // @todo - support more than one random interaction, by looping over network edges or an agent array variable.
-        flamegpu::id_t interactionPartnerID = FLAMEGPU->getVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNER);
-
-        // Iterate messages keyed by the InteractionPartner ID. There should only be one, so maybe use an Array Message @todo (but then it needs to be ID-1.)
-        for (const auto &message : FLAMEGPU->message_in(interactionPartnerID)) {
-            // Ignore self messages (can't infect oneself)
-            if (message.getVariable<flamegpu::id_t>(message::random_network_status::ID) != id) {
+        // For each interaction this agent is set to perform
+        const std::uint32_t randomInteractionCount = FLAMEGPU->getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT);
+        for (std::uint32_t randomInteractionIdx = 0; randomInteractionIdx < randomInteractionCount; ++randomInteractionIdx) {
+            // Get the (next) ID of the interaction partner.
+            flamegpu::id_t otherID = FLAMEGPU->getVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS);  // @todo - make this an array variable and access via the index
+            // if the ID is not self and not unset
+            if (otherID != id && otherID != flamegpu::ID_NOT_SET) {
+                // Get the message handle
+                const auto &message = FLAMEGPU->message_in.at(otherID);
                 // Check if the other agent is infected
                 if (message.getVariable<disease::SEIR::InfectionStateUnderlyingType>(v::INFECTION_STATE) == disease::SEIR::InfectionState::Infected) {
                     // Roll a dice
@@ -318,8 +333,6 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageBucket, fla
                         // Increment the infection counter for this individual
                         FLAMEGPU->setVariable<std::uint32_t>(v::INFECTION_COUNT, FLAMEGPU->getVariable<std::uint32_t>(v::INFECTION_COUNT) + 1);
                         break;
-                    }
-                    }
                     }
                 }
             }
@@ -348,8 +361,6 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // env var for the fraction of people in the same work network to interact with
     env.newProperty<float>("daily_fraction_work", params.daily_fraction_work);
-
-
 
     // Define the agent type
     flamegpu::AgentDescription agent = model.newAgent(person::NAME);
@@ -380,6 +391,10 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     // Workplace network variables. @todo - refactor to a separate network location?
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_SIZE);
+
+    // Random interaction network variables. @tood -refactor to separate location
+    agent.newVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS, flamegpu::ID_NOT_SET);
+    agent.newVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, 0u);
 
 #if defined(FLAMEGPU_VISUALISATION)
     // @vis only
@@ -421,6 +436,22 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     // Demographic?
     workplaceStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
 
+    // Message list containing a persons current status for random,daily interaction (id, location, infection status)
+    // Uses an array message with 1 per agent
+    flamegpu::MessageArray::Description randomNetworkStatusMessage = model.newMessage<flamegpu::MessageArray>(person::message::random_network_status::_NAME);
+
+    // ID's are 1 indexed (0 is unset) so use + 1.
+    // For ensembles this will need to be the largest n_total until https://github.com/FLAMEGPU/FLAMEGPU2/issues/710 is implemented
+    randomNetworkStatusMessage.setLength(params.n_total + 1);
+
+    // No need to add the agent ID to the message, it's implied by the bin count
+    // randomNetworkStatusMessage.newVariable<flamegpu::id_t>(person::message::random_network_status::ID);
+
+    // Add a variable for the agent's infections status
+    randomNetworkStatusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
+    // Agent's demographic
+    randomNetworkStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
+
     // Define agent functions
     // emit current status to the household
     flamegpu::AgentFunctionDescription emitHouseholdStatusDesc = agent.newFunction("emitHouseholdStatus", emitHouseholdStatus);
@@ -445,9 +476,26 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     interactWorkplaceDesc.setMessageInput(person::message::workplace_status::_NAME);
     interactWorkplaceDesc.setInitialState(person::states::DEFAULT);
     interactWorkplaceDesc.setEndState(person::states::DEFAULT);
+
+    // Update the daily random interactions
+    // @todo - a GPU implementation will be needed for model scaling.
+    flamegpu::HostFunctionDescription("updateRandomDailyNetworkIndices", updateRandomDailyNetworkIndices);
+
+    // emit current status for random interactions
+    flamegpu::AgentFunctionDescription emitRandomDailyNetworkStatusDesc = agent.newFunction("emitRandomDailyNetworkStatus", emitRandomDailyNetworkStatus);
+    emitRandomDailyNetworkStatusDesc.setMessageOutput(person::message::random_network_status::_NAME);
+    emitRandomDailyNetworkStatusDesc.setInitialState(person::states::DEFAULT);
+    emitRandomDailyNetworkStatusDesc.setEndState(person::states::DEFAULT);
+
+    // Interact with other agents in the random interactions
+    flamegpu::AgentFunctionDescription interactRandomDailyNetworkDesc = agent.newFunction("interactRandomDailyNetwork", interactRandomDailyNetwork);
+    interactRandomDailyNetworkDesc.setMessageInput(person::message::random_network_status::_NAME);
+    interactRandomDailyNetworkDesc.setInitialState(person::states::DEFAULT);
+    interactRandomDailyNetworkDesc.setEndState(person::states::DEFAULT);
 }
 
 void appendLayers(flamegpu::ModelDescription& model) {
+    // Household interactions
     {
         auto layer = model.newLayer();
         layer.addAgentFunction(person::NAME, "emitHouseholdStatus");
@@ -456,6 +504,7 @@ void appendLayers(flamegpu::ModelDescription& model) {
         auto layer = model.newLayer();
         layer.addAgentFunction(person::NAME, "interactHousehold");
     }
+    // Workplace interactions
     {
         auto layer = model.newLayer();
         layer.addAgentFunction(person::NAME, "emitWorkplaceStatus");
@@ -463,6 +512,19 @@ void appendLayers(flamegpu::ModelDescription& model) {
     {
         auto layer = model.newLayer();
         layer.addAgentFunction(person::NAME, "interactWorkplace");
+    }
+    // Random interactions
+    {
+        auto layer = model.newLayer();
+        layer.addHostFunction(updateRandomDailyNetworkIndices);
+    }
+    {
+        auto layer = model.newLayer();
+        layer.addAgentFunction(person::NAME, "emitRandomDailyNetworkStatus");
+    }
+    {
+        auto layer = model.newLayer();
+        layer.addAgentFunction(person::NAME, "interactRandomDailyNetwork");
     }
 }
 

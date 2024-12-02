@@ -47,7 +47,8 @@ DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_IDX[] = "household_idx";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_SIZE[] = "household_size";
 DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_IDX[] = "workplace_idx";
 DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_SIZE[] = "workplace_size";
-DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_PARTNER[] = "random_interaction_partner";
+DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT[] = "random_interaction_count";
+DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_PARTNERS[] = "random_interaction_partners";
 
 }  // namespace v
 
@@ -76,7 +77,7 @@ DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
 namespace random_network_status {
 DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "random_network_status";
 DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
-}  // namespace workplace_status
+}  // namespace random_network_status
 }  // namespace message
 
 

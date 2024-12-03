@@ -100,6 +100,15 @@ int entrypoint(int argc, char* argv[]) {
     // Add disease progression
     exateppabm::disease::SEIR::appendLayers(model);
 
+    // Generate the population of agents
+    // prior to the simulation creation so any mutation of the model environment is applied. this is not ideal and will need adjusting for ensembles.
+    // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
+    const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
+    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0);
+    if (personPopulation == nullptr) {
+        throw std::runtime_error("@todo - bad population generation function.");
+    }
+
     // Construct the Simulation instance from the model.
     flamegpu::CUDASimulation simulation(model);
 
@@ -111,6 +120,11 @@ int entrypoint(int argc, char* argv[]) {
 
     // Setup simulation configuration options
 
+    // If verbosity is high enough (-vvv or more) then enable flamegpu's verbose output
+    if (cli_params->verbosity > 2) {
+        simulation.SimulationConfig().verbosity = flamegpu::Verbosity::Verbose;
+    }
+
     simulation.SimulationConfig().steps = config->duration;  // @todo - change this to be controlled by an exit condition?
 
     // Seed the FLAME GPU 2 RNG seed. This is independent from RNG on the host, but we only have one RNG engine available in FLAME GPU 2 currently.
@@ -119,13 +133,7 @@ int entrypoint(int argc, char* argv[]) {
     // Set the GPU index
     simulation.CUDAConfig().device_id = cli_params->device;
 
-    // Generate the population of agents.
-    // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
-    const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
-    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0);
-    if (personPopulation == nullptr) {
-        throw std::runtime_error("@todo - bad population generation function.");
-    }
+    // add the population to this simulation instance
     simulation.setPopulationData(*personPopulation);
 
     perfFile.timers.preSimulate.stop();

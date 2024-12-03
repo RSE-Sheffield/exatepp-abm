@@ -51,6 +51,7 @@ cmake --build . --target exatepp_abm -j 8
 | `CMAKE_CUDA_ARCHITECTURES`        | `"50;60;70;80;90"` | ` Specify which CUDA [Compute Capability](https://developer.nvidia.com/cuda-gpus) Architectures to build for |
 | `CMAKE_BUILD_TYPE`                | `Release` | CMake build configuration, setting optimisation levels etc. Choose from [`Release`, `RelWithDebInfo`, `MinSizeRel`, `Debug`] |
 | `BUILD_TESTING`                   | `OFF` | Enable / disable the test suite |
+| `EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS` | `20` | The maximum number of per agent random daily interactions for the build. If this is exceeded due to model parameters an error will be reported, and you must reconfigure and rebuild with a higher value. | 
 | `FLAMEGPU_VISUALISATION`          | `OFF` | If FLAME GPU's 3D interactive visualisation should be enabled. Requires OpenGL and local execution. |
 | `FLAMEGPU_SEATBELTS`              | `ON` | Enable / Disable additional runtime checks which harm performance but increase usability |
 | `FLAMEGPU_SHARE_USAGE_STATISTICS` | `ON` | Enable / Disable FLAME GPU 2 telemetry which helps evidence use/impact of FLAME GPU 2. See the [FLAME GPU 2 user guide for more information](https://docs.flamegpu.com/guide/telemetry/) |

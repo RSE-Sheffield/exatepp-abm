@@ -29,6 +29,11 @@ option(BUILD_TESTING "Build the testing tree." OFF)
 # Option to enable google test test discovery
 cmake_dependent_option(ENABLE_GTEST_DISCOVER "Enable GTEST_DISCOVER for more detailed ctest output without -VV. This dramatically increases test suite runtime to CUDA context initialisation." OFF "BUILD_TESTING" OFF)
 
+# CMAke Cache option for the maximum number of per-agent random interactions.
+# If the value is changed here, CMakeCache.txt / the build dir will need deleting
+# Or reconfigure with -DEXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS=<new>
+set(EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS "20" CACHE STRING "Maximum number of random daily interactions per agent")
+
 # Include common rules from the FLAMEGPU/FLAMEGPU2 repositories CMake
 include(${FLAMEGPU_ROOT}/cmake/common.cmake)
 

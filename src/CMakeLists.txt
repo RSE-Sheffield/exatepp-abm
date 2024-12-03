@@ -91,6 +91,12 @@ target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:RelWithDebInfo>:CM
 target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:MinSizeRel>:CMAKE_BUILD_TYPE=\"MinSizeRel\">")
 target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:Debug>:CMAKE_BUILD_TYPE=\"Debug\">")
 
+# Set the upper limit of the per agent max random interaction count
+if(EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS GREATER 0)
+    target_compile_definitions(${LIBRARY_NAME} PUBLIC "EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS=${EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS}")
+endif()
+
+
 # Add src directory to include path, publicly so that the target library inherits this dependency (for now).
 target_include_directories("${LIBRARY_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 

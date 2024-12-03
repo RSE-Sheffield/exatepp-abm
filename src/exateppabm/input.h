@@ -199,9 +199,40 @@ struct config {
     /**
      * Fraction of people in work network interacted with per day (by rng sampling)
      * 
-     * @todo - this probably needs using differntly with more realistic networks
+     * @todo - this probably needs using differently with more realistic networks
      */
     float daily_fraction_work = 0.5f;
+
+    /**
+     * Mean number of random interactions for 0-19 year olds
+     * Arbitrary default value
+     */
+    double mean_random_interactions_0_19 = 2u;
+    /**
+     * Standard deviation for the number of random interactions per day for 0-19 year olds
+     * Default value is arbitrary
+     */
+    double sd_random_interactions_0_19 = 2u;
+    /**
+     * Mean number of random interactions for 20-69 year olds
+     * Arbitrary default value
+     */
+    double mean_random_interactions_20_69 = 4u;
+    /**
+     * Standard deviation for the number of random interactions per day for 20-69 year olds
+     * Default value is arbitrary
+     */
+    double sd_random_interactions_20_69 = 4u;
+    /**
+     * Mean number of random interactions for 70+ year olds
+     * Arbitrary default value
+     */
+    double mean_random_interactions_70plus = 2u;
+    /**
+     * Standard deviation for the number of random interactions per day for 70+ year olds
+     * Default value is arbitrary
+     */
+    double sd_random_interactions_70plus = 2u;
 };
 
 /**

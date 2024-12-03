@@ -217,6 +217,24 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->daily_fraction_work)) {
                 throw std::runtime_error("bad value for daily_fraction_work during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->mean_random_interactions_0_19)) {
+                throw std::runtime_error("bad value for mean_random_interactions_0_19 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_random_interactions_0_19)) {
+                throw std::runtime_error("bad value for sd_random_interactions_0_19 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_random_interactions_20_69)) {
+                throw std::runtime_error("bad value for mean_random_interactions_20_69 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_random_interactions_20_69)) {
+                throw std::runtime_error("bad value for sd_random_interactions_20_69 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_random_interactions_70plus)) {
+                throw std::runtime_error("bad value for mean_random_interactions_70plus during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_random_interactions_70plus)) {
+                throw std::runtime_error("bad value for sd_random_interactions_70plus during csv parsing @todo\n");
+            }
 
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
@@ -275,6 +293,12 @@ void print(exateppabm::input::config config) {
     fmt::print("  relative_transmission_occupation = {}\n", config.relative_transmission_occupation);
     fmt::print("  relative_transmission_random = {}\n", config.relative_transmission_occupation);
     fmt::print("  daily_fraction_work = {}\n", config.daily_fraction_work);
+    fmt::print("  mean_random_interactions_0_19 = {}\n", config.mean_random_interactions_0_19);
+    fmt::print("  sd_random_interactions_0_19 = {}\n", config.sd_random_interactions_0_19);
+    fmt::print("  mean_random_interactions_20_69 = {}\n", config.mean_random_interactions_20_69);
+    fmt::print("  sd_random_interactions_20_69 = {}\n", config.sd_random_interactions_20_69);
+    fmt::print("  mean_random_interactions_70plus = {}\n", config.mean_random_interactions_70plus);
+    fmt::print("  sd_random_interactions_70plus = {}\n", config.sd_random_interactions_70plus);
     fmt::print("}}\n");
 }
 

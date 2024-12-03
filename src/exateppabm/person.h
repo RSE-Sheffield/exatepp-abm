@@ -24,6 +24,16 @@ namespace person {
 constexpr char NAME[] = "person";
 
 /**
+ * Maximum number of random daily interactions, which must be known at compile time due to FLAME GPU array variable limitations (they are arrays not vectors)
+ * @todo - make this value overrideable via CMake.
+ */
+#ifdef EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS
+constexpr std::uint32_t MAX_RANDOM_DAILY_INTERACTIONS = EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS;
+#else
+#error "EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS is not defined"
+#endif  // EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS
+
+/**
  * Namespace containing host device constants for state names related to the Person agent type
  */
 namespace states {
@@ -47,8 +57,10 @@ DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_IDX[] = "household_idx";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_SIZE[] = "household_size";
 DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_IDX[] = "workplace_idx";
 DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_SIZE[] = "workplace_size";
-DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT[] = "random_interaction_count";
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_PARTNERS[] = "random_interaction_partners";
+DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT[] = "random_interaction_count";
+DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT_TARGET[] = "random_interaction_count_target";
+
 
 }  // namespace v
 
@@ -91,9 +103,9 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
 /**
  * Add person related functions to the FLAMEGPU 2 layer based control flow.
- * 
+ *
  * Does not use the DAG abstraction due to previously encountered bugs with split compilation units which have not yet been pinned down / resolved.
- * 
+ *
  * @param model flamegpu2 model description object to mutate
  */
 void appendLayers(flamegpu::ModelDescription& model);

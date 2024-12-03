@@ -2,6 +2,8 @@
 
 #include <fmt/core.h>
 
+#include <vector>
+
 #include "exateppabm/disease/SEIR.h"
 #include "exateppabm/demographics.h"
 
@@ -220,9 +222,8 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageBucket, flamegpu::Me
  * In serial on the host, generate a vector of interactions
  *
  * @todo - more than one random interaction per day
- * @todo - prevent self-interactions
  * @todo - prevent duplicate interactions
- * @todo - more performance CPU implementation
+ * @todo - more performant CPU implementation
  * @todo - GPU implementation of this (stable matching submodel?)
  */
 FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
@@ -230,32 +231,126 @@ FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
     auto personAgent = FLAMEGPU->agent(exateppabm::person::NAME, exateppabm::person::states::DEFAULT);
     flamegpu::DeviceAgentVector population = personAgent.getPopulationData();
 
-    // @temp - Interact with ID +/1 pair wise for now, as a temp fix.
-    if (FLAMEGPU->getStepCounter() == 0) {
-        for (auto person : population) {
-            flamegpu::id_t id = person.getID();
-            flamegpu::id_t other = flamegpu::ID_NOT_SET;
-            if (id % 2 == 0) {
-                other = id - 1;
-            } else {
-                other = id + 1;
-            }
+    // @todo implement the following
+    // Get the sum of the per-agent random interaction count, so we can reserve a large enough vector
+    std::uint64_t randomInteractionCountSum = FLAMEGPU->environment.getProperty<std::uint64_t>("RANDOM_INTERACTION_COUNT_SUM");
 
-            person.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, 1u);
-            person.setVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS, other);  // @todo - multiple.
+    // If there are none, return.
+    if (randomInteractionCountSum == 0) {
+        return;
+    }
+
+    // Build a vector of interactions, initialised to contain the id of each agent as many times as they require
+    // Number is fixed for the simulation, so only allocate and initialise once via a method-static variable
+    static std::vector<flamegpu::id_t> randomInteractionIdVector;
+    // If empty, initialise to contain each agent's ID the required number of times.
+    // This will only trigger a device to host copy for the first pass.
+    // This could be optimised away, with a namespace scoped static and initialised during initial host agent population, at the cost of readability
+    if (randomInteractionIdVector.empty()) {
+        randomInteractionIdVector.resize(randomInteractionCountSum);
+        size_t first = 0;
+        size_t last = 0;
+        for (const auto &person : population) {
+            flamegpu::id_t id = person.getID();
+            std::uint32_t count = person.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT_TARGET);
+            last = first + count;
+            if (last > randomInteractionCountSum) {
+                throw std::runtime_error("Too many random interactions being generated. @todo better error");
+            }
+            std::fill(randomInteractionIdVector.begin() + first, randomInteractionIdVector.begin() + last, id);
+            first = last;
         }
     }
 
-
-    // @todo implement the following
-    // Get the sum of the per-agent random interaction count, so we can reserve a large enough vector
-
-    // Build a vector of interactions, initialised to contain the id of each agent as many times as they require
-
-    // Shuffle the vector of agent id's
+    // Shuffle the vector of agent id's.
+    // @todo - adjust how this RNG is seeded, this is far from ideal.
+    auto rng = std::mt19937_64(FLAMEGPU->random.uniform<double>());
+    std::shuffle(randomInteractionIdVector.begin(), randomInteractionIdVector.end(), rng);
 
     // Update agent data containing today's random interactions
-    // @todo - support more than one interaction per agent per day.
+    // This will trigger Host to Device copies
+    // Iterate the pairs of ID which form the interactions, updating both agents' data for each interaction.
+    // @todo - avoid self-interactions and duplicate interactions.
+    // The number of interaction pairs is the total number of id's divided by 2, and rounded down.
+    std::uint64_t interactionCount = static_cast<std::uint64_t>(std::floor(randomInteractionCountSum / 2.0));
+    for (std::uint64_t interactionIdx = 0; interactionIdx < interactionCount; ++interactionIdx) {
+        // Get the indices within the vector of agent id's. An mdspan would be nice if not c++17
+        size_t aIndex = (interactionIdx * 2);
+        size_t bIndex = aIndex + 1;
+
+        // Get the agent ID's
+        flamegpu::id_t aID = randomInteractionIdVector[aIndex];
+        flamegpu::id_t bID = randomInteractionIdVector[bIndex];
+
+        // Assuming that agents are in-oder (which is not guaranteed!)
+        // @todo - this validation could be done once per iteration, not once per interaction?
+        // @todo switch to a sparse data structure, indexed by agent ID? Not ideal for mem access, but simpler and less validation required.
+
+        // Get a handle to each agent from the population vector.
+        // Agents ID's are 1 indexed
+        auto aAgent = population[aID - 1];
+        auto bAgent = population[bID - 1];
+        // Raise an exception if the agents are out of order. This should not be the case as agent birth, death and sorting should not be included in this model.
+        if (aAgent.getID() != aID || bAgent.getID() != bID) {
+            throw std::runtime_error("Agent ID does not match expected agent ID in updateRandomDailyNetworkIndices. @todo");
+        }
+
+        // @todo - avoid self-interactions by looking ahead and swapping?
+        // @todo - avoid repeated interactions by looking ahead and swapping?
+
+        // Add the interaction to the list of interactions agent a
+        std::uint32_t aInteractionIdx = aAgent.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT);
+        // aAgent.setVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, aInteractionIdx, bID);
+        aAgent.setVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS, aInteractionIdx, bID);
+        aAgent.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, aInteractionIdx + 1);
+
+
+        // Add the interaction to the list of interactions agent b
+        std::uint32_t bInteractionIdx = bAgent.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT);
+        // bAgent.setVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, bInteractionIdx, aID);
+        bAgent.setVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS, bInteractionIdx, aID);
+        bAgent.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, bInteractionIdx + 1);
+    }
+
+    // setVariable<T, LEN>(name, idx, value) works locally, but doesn't seem to update the full thing so do the whole array per agent to enforce the copy?
+    // @todo - This should not be required, possible bug in FLAME GPU / hole in the API which I'll check separately
+    for (auto person : population) {
+        person.setVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS));
+    }
+
+    // @temp
+    /*
+    for (const auto &person : population) {
+        flamegpu::id_t id = person.getID();
+        fmt::print("{}: {} [{}, {}]\n",
+        id,
+        person.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT),
+        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 0),
+        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 1)
+        );
+    }*/
+
+    population.syncChanges();
+}
+
+// @temp
+FLAMEGPU_HOST_FUNCTION(test) {
+    // @temp
+    /*
+    fmt::print("! test\n");
+    // Get the current population of person agents
+    auto personAgent = FLAMEGPU->agent(exateppabm::person::NAME, exateppabm::person::states::DEFAULT);
+    flamegpu::DeviceAgentVector population = personAgent.getPopulationData();
+     for (const auto &person : population) {
+        flamegpu::id_t id = person.getID();
+        fmt::print("{}: {} [{}, {}]\n",
+        id,
+        person.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT),
+        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 0),
+        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 1)
+        );
+    }
+    */
 }
 
 /**
@@ -313,7 +408,7 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flam
         const std::uint32_t randomInteractionCount = FLAMEGPU->getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT);
         for (std::uint32_t randomInteractionIdx = 0; randomInteractionIdx < randomInteractionCount; ++randomInteractionIdx) {
             // Get the (next) ID of the interaction partner.
-            flamegpu::id_t otherID = FLAMEGPU->getVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS);  // @todo - make this an array variable and access via the index
+            flamegpu::id_t otherID = FLAMEGPU->getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, randomInteractionIdx);
             // if the ID is not self and not unset
             if (otherID != id && otherID != flamegpu::ID_NOT_SET) {
                 // Get the message handle
@@ -343,6 +438,11 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flam
             FLAMEGPU->setVariable<float>(person::v::INFECTION_STATE_DURATION, stateDuration);
         }
     }
+
+    // reset the agent's number of interactions to 0 in advance of the next day.
+    // This is expensive, but the D2H copy would get triggered anyway if attempting to update on the host anyway.
+    // @todo - a more performant way to do the random daily interaction network would be good.
+    FLAMEGPU->setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, 0u);
 
     return flamegpu::ALIVE;
 }
@@ -392,9 +492,16 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_SIZE);
 
-    // Random interaction network variables. @tood -refactor to separate location
-    agent.newVariable<flamegpu::id_t>(person::v::RANDOM_INTERACTION_PARTNERS, flamegpu::ID_NOT_SET);
+    // Random interaction network variables. @todo -refactor to separate location
+    agent.newVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, {flamegpu::ID_NOT_SET});
     agent.newVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, 0u);
+    agent.newVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT_TARGET, 0u);
+
+    // Add an environmental variable containing the sum of each agents target number of random interactions.
+    // This is not the number of pair-wise interactions, but the number each individual would like.
+    // there are cases where this value would be impossible to achieve for a given population.
+    // I.e. if there are 2 agents, with targets of [2, 1]. This would be a target of 3, but only 1 interaction is possible
+    env.newProperty<std::uint64_t>("RANDOM_INTERACTION_COUNT_SUM", 0u);
 
 #if defined(FLAMEGPU_VISUALISATION)
     // @vis only
@@ -517,6 +624,10 @@ void appendLayers(flamegpu::ModelDescription& model) {
     {
         auto layer = model.newLayer();
         layer.addHostFunction(updateRandomDailyNetworkIndices);
+    }
+    {
+        auto layer = model.newLayer();
+        layer.addHostFunction(test);
     }
     {
         auto layer = model.newLayer();

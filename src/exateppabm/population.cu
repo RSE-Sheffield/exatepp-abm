@@ -3,6 +3,7 @@
 #include <fmt/core.h>
 
 #include <algorithm>
+#include <limits>
 #include <numeric>
 #include <memory>
 #include <random>
@@ -29,6 +30,9 @@ std::array<std::uint64_t, demographics::AGE_COUNT> _infectedPerDemographic = {};
 
 std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config params, const bool verbose) {
     fmt::print("@todo - validate params inputs when generated agents (pop size, initial infected count etc)\n");
+
+    // Get a handle on the environment.
+    auto env = model.Environment();
 
     // @todo - assert that the requested initial population is non zero.
     auto pop = std::make_unique<flamegpu::AgentVector>(model.Agent(exateppabm::person::NAME), params.n_total);
@@ -98,6 +102,12 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     std::array<std::uint32_t, 3> peoplePerWorkplace = {{0, 0, 0}};
     // /--------
 
+    // Counter for random interaction count. This will be 2x the number of interactions
+    std::uint64_t randomInteractionCountSum = 0u;
+    // Max/min trackers for random interaction targets, for verbose output.
+    std::uint32_t randomInteractionMax = 0u;
+    std::uint32_t randomInteractionMin = std::numeric_limits<std::uint32_t>::max();
+
     // Populate agent data, by iterating households
     std::uint32_t personIdx = 0;
     for (std::uint32_t householdIdx = 0; householdIdx < households.size(); householdIdx++) {
@@ -152,9 +162,57 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
             // Store the assigned network in the agent data structure
             person.setVariable<std::uint32_t>(person::v::WORKPLACE_IDX, workplaceIdx);
 
+            // Generate the (target) number of random interactions this individual will be involved in per day. Not all combinations will be possible on all days, hence target.
+
+            // @todo - optionally allow binomial distributions
+            // @todo - decide if non non-binomeal should be a mean or not, maybe allow non fixed normal dists?
+            // @todo - refactor and test.
+            double meanRandomInteractions = params.mean_random_interactions_20_69;
+            double sdRandomInteractions = params.sd_random_interactions_20_69;
+            if (age == demographics::Age::AGE_0_9 || age == demographics::Age::AGE_10_19) {
+                meanRandomInteractions = params.mean_random_interactions_0_19;
+                sdRandomInteractions = params.sd_random_interactions_0_19;
+            } else if (age == demographics::Age::AGE_70_79 || age == demographics::Age::AGE_80) {
+                meanRandomInteractions = params.mean_random_interactions_70plus;
+                sdRandomInteractions = params.sd_random_interactions_70plus;
+            }
+
+            // Sample a normal distribution (of integers, so we can clamp to >= 0)
+            std::normal_distribution<double> randomInteractionDist{meanRandomInteractions, sdRandomInteractions};
+            // Sample from the distribution
+            double randomInteractionsRaw = randomInteractionDist(rng);
+            // Clamp to be between 0 and the popualtion size, and cast to uint
+            std::uint32_t randomInteractionTarget = static_cast<std::uint32_t>(std::clamp(randomInteractionsRaw, 0.0, static_cast<double>(params.n_total)));
+
+            // If the max was over the compile time upper limit due to flamegpu limitations, emit a warning and exit.
+            if (randomInteractionTarget > person::MAX_RANDOM_DAILY_INTERACTIONS) {
+                fmt::print(stderr, "Fatal Error: Random Interaction Target {} exceeds fixed limit MAX_RANDOM_DAILY_INTERACTIONS {}. Please rebuild with a higher value @todo\n", randomInteractionTarget, person::MAX_RANDOM_DAILY_INTERACTIONS);
+                exit(EXIT_FAILURE);
+            }
+
+            // Update the min and max tracking for output to stdout
+            randomInteractionMin = std::min(randomInteractionMin, randomInteractionTarget);
+            randomInteractionMax = std::max(randomInteractionMax, randomInteractionTarget);
+            // Set for the agent
+            person.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT_TARGET, randomInteractionTarget);
+            // Track the sum of target interaction counts
+            randomInteractionCountSum += randomInteractionTarget;
+
             // Increment the person index
             ++personIdx;
         }
+    }
+
+    if (verbose) {
+        fmt::print("Random Interactions: min={}, max={}, sum={}\n", randomInteractionMin, randomInteractionMax, randomInteractionCountSum);
+    }
+
+    // Set the sum of per agent target interaction counts. This is not the total number of interactions that will occur, as not all configurations are possible.
+    // This only works if this method is called prior to simulation construction!
+    env.setProperty<std::uint64_t>("RANDOM_INTERACTION_COUNT_SUM", randomInteractionCountSum);
+    // Warn if the number target number of interactions is odd.
+    if (randomInteractionCountSum % 2 == 1) {
+        fmt::print(stderr, "Warning: Total the sum of per-agent random interactions is odd ({})\n", randomInteractionCountSum);
     }
 
     // In a separate pass over the population, set the size of each workplace network per individual

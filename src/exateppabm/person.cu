@@ -312,45 +312,24 @@ FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
         bAgent.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT, bInteractionIdx + 1);
     }
 
-    // setVariable<T, LEN>(name, idx, value) works locally, but doesn't seem to update the full thing so do the whole array per agent to enforce the copy?
-    // @todo - This should not be required, possible bug in FLAME GPU / hole in the API which I'll check separately
-    for (auto person : population) {
-        person.setVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS));
+    // setVariable<T, LEN>(name, idx, value) in flamegpu 2.0.0-rc.2 and earlier contains a bug where the single element setting variant does not trigger data synchronisation on the end of the host function
+    // This has been fixed by https://github.com/FLAMEGPU/FLAMEGPU2/pull/1266, which will be part of flamegpu 2.0.0-rc.3
+    // As pre release versions are strings, this is a more complex if statement than it would ideally be
+    // Can macro this out if FLAME GPU is not 2.0.0
+#if defined(FLAMEGPU_VERSION) && FLAMEGPU_VERSION == 2000000
+    // then at runtime we can only trigger the workaround for flamegpu2 versions rc2 and before
+    if (strcmp(flamegpu::VERSION_PRERELEASE, "rc.2") == 0
+        || strcmp(flamegpu::VERSION_PRERELEASE, "rc.1") == 0
+        || strcmp(flamegpu::VERSION_PRERELEASE, "rc") == 0
+        || strcmp(flamegpu::VERSION_PRERELEASE, "alpha.2") == 0
+        || strcmp(flamegpu::VERSION_PRERELEASE, "alpha.1") == 0
+        || strcmp(flamegpu::VERSION_PRERELEASE, "alpha") == 0) {
+        exit(1);
+        for (auto person : population) {
+            person.setVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS));
+        }
     }
-
-    // @temp
-    /*
-    for (const auto &person : population) {
-        flamegpu::id_t id = person.getID();
-        fmt::print("{}: {} [{}, {}]\n",
-        id,
-        person.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT),
-        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 0),
-        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 1)
-        );
-    }*/
-
-    population.syncChanges();
-}
-
-// @temp
-FLAMEGPU_HOST_FUNCTION(test) {
-    // @temp
-    /*
-    fmt::print("! test\n");
-    // Get the current population of person agents
-    auto personAgent = FLAMEGPU->agent(exateppabm::person::NAME, exateppabm::person::states::DEFAULT);
-    flamegpu::DeviceAgentVector population = personAgent.getPopulationData();
-     for (const auto &person : population) {
-        flamegpu::id_t id = person.getID();
-        fmt::print("{}: {} [{}, {}]\n",
-        id,
-        person.getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT),
-        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 0),
-        person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, 1)
-        );
-    }
-    */
+#endif
 }
 
 /**
@@ -624,10 +603,6 @@ void appendLayers(flamegpu::ModelDescription& model) {
     {
         auto layer = model.newLayer();
         layer.addHostFunction(updateRandomDailyNetworkIndices);
-    }
-    {
-        auto layer = model.newLayer();
-        layer.addHostFunction(test);
     }
     {
         auto layer = model.newLayer();

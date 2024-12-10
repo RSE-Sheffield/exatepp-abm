@@ -324,7 +324,6 @@ FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
         || strcmp(flamegpu::VERSION_PRERELEASE, "alpha.2") == 0
         || strcmp(flamegpu::VERSION_PRERELEASE, "alpha.1") == 0
         || strcmp(flamegpu::VERSION_PRERELEASE, "alpha") == 0) {
-        exit(1);
         for (auto person : population) {
             person.setVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS, person.getVariable<flamegpu::id_t, person::MAX_RANDOM_DAILY_INTERACTIONS>(person::v::RANDOM_INTERACTION_PARTNERS));
         }

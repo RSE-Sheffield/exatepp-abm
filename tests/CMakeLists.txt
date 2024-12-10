@@ -32,6 +32,7 @@ include(${FLAMEGPU_ROOT}/cmake/common.cmake)
 # List test source files
 set(TESTS_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/exateppabm/test_network.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/exateppabm/test_population.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/src/exateppabm/test_util.cu
 )

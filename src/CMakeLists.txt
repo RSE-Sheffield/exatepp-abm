@@ -21,6 +21,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/network.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/OutputFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerformanceFile.h
@@ -36,6 +37,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/network.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerformanceFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp

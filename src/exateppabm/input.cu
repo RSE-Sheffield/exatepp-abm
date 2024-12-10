@@ -15,6 +15,8 @@ namespace exateppabm {
 namespace input {
 namespace {
 
+constexpr char header[] = "rng_seed,param_id,duration,n_total,n_seed_infection,population_0_9,population_10_19,population_20_29,population_30_39,population_40_49,population_50_59,population_60_69,population_70_79,population_80,household_size_1,household_size_2,household_size_3,household_size_4,household_size_5,household_size_6,p_interaction_susceptible_to_exposed,mean_time_to_infected,sd_time_to_infected,mean_time_to_recovered,sd_time_to_recovered,mean_time_to_susceptible,sd_time_to_susceptible,relative_susceptibility_0_9,relative_susceptibility_10_19,relative_susceptibility_20_29,relative_susceptibility_30_39,relative_susceptibility_40_49,relative_susceptibility_50_59,relative_susceptibility_60_69,relative_susceptibility_70_79,relative_susceptibility_80,child_network_adults,elderly_network_adults,relative_transmission_household,relative_transmission_occupation,relative_transmission_random,mean_work_interactions_child,mean_work_interactions_adult,mean_work_interactions_elderly,daily_fraction_work,work_network_rewire,mean_random_interactions_0_19,sd_random_interactions_0_19,mean_random_interactions_20_69,sd_random_interactions_20_69,mean_random_interactions_70plus,sd_random_interactions_70plus";  //NOLINT
+
 /**
  * Get the next value from a csv row as a specified type
  *
@@ -77,6 +79,10 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
         // For now discard the header row
         if (!std::getline(fs, line)) {
             throw std::runtime_error("failed to read the header line @todo nicer error message");
+        }
+        // Warn if the header is not the expected value
+        if (strcmp(line.c_str(), header) != 0) {
+            fmt::print("Warning: {} header does not match the expected value. Errors may occur, or parameters may be used incorrectly.\nExpected header:\n{}\n", p.c_str(), header);
         }
 
         // Discard rows until the line number is the target line number
@@ -214,8 +220,20 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->relative_transmission_random)) {
                 throw std::runtime_error("bad value for relative_transmission_random during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->mean_work_interactions_child)) {
+                throw std::runtime_error("bad value for mean_work_interactions_child during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_work_interactions_adult)) {
+                throw std::runtime_error("bad value for mean_work_interactions_adult during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_work_interactions_elderly)) {
+                throw std::runtime_error("bad value for mean_work_interactions_elderly during csv parsing @todo\n");
+            }
             if (!valueFromCSVLine(line, c->daily_fraction_work)) {
                 throw std::runtime_error("bad value for daily_fraction_work during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->work_network_rewire)) {
+                throw std::runtime_error("bad value for work_network_rewire during csv parsing @todo\n");
             }
             if (!valueFromCSVLine(line, c->mean_random_interactions_0_19)) {
                 throw std::runtime_error("bad value for mean_random_interactions_0_19 during csv parsing @todo\n");
@@ -292,7 +310,11 @@ void print(exateppabm::input::config config) {
     fmt::print("  relative_transmission_household = {}\n", config.relative_transmission_household);
     fmt::print("  relative_transmission_occupation = {}\n", config.relative_transmission_occupation);
     fmt::print("  relative_transmission_random = {}\n", config.relative_transmission_occupation);
+    fmt::print("  mean_work_interactions_child = {}\n", config.mean_work_interactions_child);
+    fmt::print("  mean_work_interactions_adult = {}\n", config.mean_work_interactions_adult);
+    fmt::print("  mean_work_interactions_elderly = {}\n", config.mean_work_interactions_elderly);
     fmt::print("  daily_fraction_work = {}\n", config.daily_fraction_work);
+    fmt::print("  work_network_rewire = {}\n", config.work_network_rewire);
     fmt::print("  mean_random_interactions_0_19 = {}\n", config.mean_random_interactions_0_19);
     fmt::print("  sd_random_interactions_0_19 = {}\n", config.sd_random_interactions_0_19);
     fmt::print("  mean_random_interactions_20_69 = {}\n", config.mean_random_interactions_20_69);

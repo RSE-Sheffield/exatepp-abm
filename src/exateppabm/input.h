@@ -100,7 +100,7 @@ struct config {
     /**
      * The mean time in days from exposed to infected state
      * Default value is arbitrary
-     * @todo - might be equivalent to mean_time_to_syptoms, depending on how asym works in the reference model.
+     * @todo - might be equivalent to mean_time_to_symptoms, depending on how the more complex disease model works in the reference model.
      */
     float mean_time_to_infected = 4;
     /**
@@ -197,39 +197,63 @@ struct config {
      */
     float relative_transmission_random = 1.0f;
     /**
-     * Fraction of people in work network interacted with per day (by rng sampling)
-     * 
-     * @todo - this probably needs using differently with more realistic networks
+     * Mean daily interactions at school (0-19)
+     * This parameter is used during small world network generation (k)
+     * Arbitrary default value
      */
-    float daily_fraction_work = 0.5f;
-
+    double mean_work_interactions_child = 10;
     /**
-     * Mean number of random interactions for 0-19 year olds
+     * Mean daily interactions at adult workplaces (20-69)
+     * This parameter is used during small world network generation (k)
+     * Arbitrary default value
+     */
+    double mean_work_interactions_adult = 7.5;
+    /**
+     * Mean daily interactions at equivalent to workplace for older people (70+)
+     * This parameter is used during small world network generation (k)
+     * Arbitrary default value
+     */
+    double mean_work_interactions_elderly = 3;
+    /**
+     * Fraction of people in work network interacted with per day
+     * 
+     * This modifies the small world generation initial mean to create larger clusters, allowing for random sampling by this factor on each day
+     * 
+     * Arbitrary default value
+     */
+    double daily_fraction_work = 0.5;
+    /**
+     * Small world network rewire parameter (probability) for workplaces, in range [0, 1]
+     * Arbitrary default
+     */
+    double work_network_rewire = 0.1;
+    /**
+     * Mean number of random interactions for 0-19 age individuals
      * Arbitrary default value
      */
     double mean_random_interactions_0_19 = 2u;
     /**
-     * Standard deviation for the number of random interactions per day for 0-19 year olds
+     * Standard deviation for the number of random interactions per day for 0-19 age individuals
      * Default value is arbitrary
      */
     double sd_random_interactions_0_19 = 2u;
     /**
-     * Mean number of random interactions for 20-69 year olds
+     * Mean number of random interactions for 20-69 age individuals
      * Arbitrary default value
      */
     double mean_random_interactions_20_69 = 4u;
     /**
-     * Standard deviation for the number of random interactions per day for 20-69 year olds
+     * Standard deviation for the number of random interactions per day for 20-69 age individuals
      * Default value is arbitrary
      */
     double sd_random_interactions_20_69 = 4u;
     /**
-     * Mean number of random interactions for 70+ year olds
+     * Mean number of random interactions for 70+ age individuals
      * Arbitrary default value
      */
     double mean_random_interactions_70plus = 2u;
     /**
-     * Standard deviation for the number of random interactions per day for 70+ year olds
+     * Standard deviation for the number of random interactions per day for 70+ age individuals
      * Default value is arbitrary
      */
     double sd_random_interactions_70plus = 2u;

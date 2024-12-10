@@ -6,6 +6,8 @@
 
 #include "exateppabm/disease/SEIR.h"
 #include "exateppabm/demographics.h"
+#include "exateppabm/population.h"  // @todo - replace with workpalce when abstracted
+
 
 namespace exateppabm {
 namespace person {
@@ -466,6 +468,14 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     agent.newVariable<std::uint32_t>(person::v::HOUSEHOLD_IDX);
     agent.newVariable<std::uint8_t>(person::v::HOUSEHOLD_SIZE);
 
+    // Workplace environment directed graph
+    // This single graph contains workplace information for all individuals, and is essentially 5 unconnected sub graphs.
+    flamegpu::EnvironmentDirectedGraphDescription workplaceDigraphDesc= env.newDirectedGraph("WORKPLACE_DIGRAPH");
+    // Graph vertices 
+    workplaceDigraphDesc.newVertexProperty<float, 2>("bar");
+    workplaceDigraphDesc.newEdgeProperty<int>("foo");
+
+
     // Workplace network variables. @todo - refactor to a separate network location?
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
     agent.newVariable<std::uint32_t>(person::v::WORKPLACE_SIZE);
@@ -510,7 +520,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // Set the maximum bucket index to the population size, to the maximum number of workplace networks
     // @todo - this will be replaced with a per-person message when improved network messaging is implemented (where individuals will communicate with their direct network)
-    workplaceStatusMessage.setUpperBound(3);  // params.n_total);
+    workplaceStatusMessage.setUpperBound(exateppabm::population::WORKPLACE_COUNT);
 
     // Add the agent id to the message.
     workplaceStatusMessage.newVariable<flamegpu::id_t>(person::message::workplace_status::ID);

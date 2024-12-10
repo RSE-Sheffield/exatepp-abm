@@ -12,8 +12,9 @@
 
 #include "exateppabm/demographics.h"
 #include "exateppabm/disease.h"
-#include "exateppabm/person.h"
 #include "exateppabm/input.h"
+#include "exateppabm/network.h"
+#include "exateppabm/person.h"
 #include "exateppabm/util.h"
 #include "exateppabm/visualisation.h"
 
@@ -30,12 +31,20 @@ std::array<std::uint64_t, demographics::AGE_COUNT> _infectedPerDemographic = {};
 
 std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& model, const exateppabm::input::config params, const bool verbose) {
     fmt::print("@todo - validate params inputs when generated agents (pop size, initial infected count etc)\n");
+    // n_total must be less than uint max
+    // n_total must be more than 0.
+    // initial infected count must be more than 0, less than full pop.
 
     // Get a handle on the environment.
     auto env = model.Environment();
 
     // @todo - assert that the requested initial population is non zero.
     auto pop = std::make_unique<flamegpu::AgentVector>(model.Agent(exateppabm::person::NAME), params.n_total);
+
+    // Do nothing if no one to create?
+    if (params.n_total == 0) {
+        return pop;
+    }
 
     // seed host rng for population generation.
     // @todo - does this want to be a separate seed from the config file?
@@ -66,41 +75,10 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
     // This is used for the initial value in time series data, without having to iterate all agent data again, but may not be thread safe (i.e. probably need to change for ensembles)
     _infectedPerDemographic = {{0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-
-    // ------ @todo - refactor
-    // Given the household and ages are known, we can compute the workplace assignment probabilities
-
-    // @todo - workplace enum
-    constexpr std::uint8_t WORKPLACE_CHILD = 0u;
-    constexpr std::uint8_t WORKPLACE_ADULT = 1u;
-    constexpr std::uint8_t WORKPLACE_ELDERLY = 2u;
-
-    // For adults, compute the likelihood they will be assigned to child or elderly network
-    // @todo - prolly use a vector so we can have multiple networks instead of just 3...
-    std::uint64_t n_children = createdPerDemographic[demographics::Age::AGE_0_9] + createdPerDemographic[demographics::Age::AGE_10_19];
-    std::uint64_t n_elderly = createdPerDemographic[demographics::Age::AGE_70_79] + createdPerDemographic[demographics::Age::AGE_80];
-    std::uint64_t n_adult = params.n_total - (n_children + n_elderly);
-
-    // Initialise with the target number of adults in each network
-    std::array<double, 3> p_adultPerWorkNetwork = {0};
-    // p of each category is target number / number adults
-    p_adultPerWorkNetwork[WORKPLACE_CHILD] = (params.child_network_adults * n_children) / n_adult;
-    p_adultPerWorkNetwork[WORKPLACE_ELDERLY] = (params.elderly_network_adults * n_elderly) / n_adult;
-    // p of being adult is then the remaining probability
-    p_adultPerWorkNetwork[WORKPLACE_ADULT] = 1.0 - (p_adultPerWorkNetwork[WORKPLACE_CHILD] + p_adultPerWorkNetwork[WORKPLACE_ELDERLY]);
-
-    // Then convert to cumulative probability with an inclusive scan
-    exateppabm::util::inclusive_scan(p_adultPerWorkNetwork.begin(), p_adultPerWorkNetwork.end(), p_adultPerWorkNetwork.begin());
-
-    // make sure the top bracket ends in a value in case of floating point / rounding >= 1.0
-    p_adultPerWorkNetwork[WORKPLACE_ELDERLY] = 1.0;
-
-    // Use a uniform distribution from 0 to 1
-    std::uniform_real_distribution<float> work_network_dist(0.0f, 1.0f);
-
-    // Prep to track how many people are in each network
-    std::array<std::uint32_t, 3> peoplePerWorkplace = {{0, 0, 0}};
-    // /--------
+    // Given the household and ages are known, we can compute the workplace assignment probabilities for adults
+    std::array<double, WORKPLACE_COUNT> p_adultPerWorkNetwork = getAdultWorkplaceCumulativeProbabilityArray(params.child_network_adults, params.elderly_network_adults, createdPerDemographic);
+    // Store the ID of each individual for each workplace, to form the node labels of the small world network
+    std::array<std::vector<flamegpu::id_t>, WORKPLACE_COUNT> workplaceMembers = {{}};
 
     // Counter for random interaction count. This will be 2x the number of interactions
     std::uint64_t randomInteractionCountSum = 0u;
@@ -140,32 +118,19 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
                 _infectedPerDemographic[age]++;
             }
 
-            // Assign the workplace based on age band - @todo refactor further
-            std::uint32_t workplaceIdx = WORKPLACE_ADULT;  // default to adult workplace
-            if (age == demographics::Age::AGE_0_9 || age == demographics::Age::AGE_10_19) {
-                workplaceIdx = WORKPLACE_CHILD;
-            } else if (age == demographics::Age::AGE_70_79 || age == demographics::Age::AGE_80) {
-                workplaceIdx = WORKPLACE_ELDERLY;
-            } else {
-                // Randomly sample
-                float r = work_network_dist(rng);
-                for (std::uint32_t i = 0; i < p_adultPerWorkNetwork.size(); i++) {
-                    if (r < p_adultPerWorkNetwork[i]) {
-                        workplaceIdx = i;
-                        break;
-                    }
-                }
-            }
+            // Assign the workplace based on age band
+            WorkplaceUnderlyingType workplaceIdx = generateWorkplaceForIndividual(age, p_adultPerWorkNetwork, rng);
 
-            // inc the counter per network
-            peoplePerWorkplace[workplaceIdx]++;
+            // Store the agent's expected ID (getID returns 0 when not in an init func?)
+            // @todo - switch to init func and use getID();
+            workplaceMembers[workplaceIdx].push_back(person.getIndex() + 1);
             // Store the assigned network in the agent data structure
             person.setVariable<std::uint32_t>(person::v::WORKPLACE_IDX, workplaceIdx);
 
             // Generate the (target) number of random interactions this individual will be involved in per day. Not all combinations will be possible on all days, hence target.
 
             // @todo - optionally allow binomial distributions
-            // @todo - decide if non non-binomeal should be a mean or not, maybe allow non fixed normal dists?
+            // @todo - decide if non non-binomial should be a mean or not, maybe allow non fixed normal dists?
             // @todo - refactor and test.
             double meanRandomInteractions = params.mean_random_interactions_20_69;
             double sdRandomInteractions = params.sd_random_interactions_20_69;
@@ -181,7 +146,7 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
             std::normal_distribution<double> randomInteractionDist{meanRandomInteractions, sdRandomInteractions};
             // Sample from the distribution
             double randomInteractionsRaw = randomInteractionDist(rng);
-            // Clamp to be between 0 and the popualtion size, and cast to uint
+            // Clamp to be between 0 and the population size, and cast to uint
             std::uint32_t randomInteractionTarget = static_cast<std::uint32_t>(std::clamp(randomInteractionsRaw, 0.0, static_cast<double>(params.n_total)));
 
             // If the max was over the compile time upper limit due to flamegpu limitations, emit a warning and exit.
@@ -215,17 +180,57 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         fmt::print(stderr, "Warning: Total the sum of per-agent random interactions is odd ({})\n", randomInteractionCountSum);
     }
 
-    // In a separate pass over the population, set the size of each workplace network per individual
-    // @todo - refactor this once small world networks are implemented
+    // Now individuals have been assigned to each workplace network, we can generate the small world networks for workplace interactions
+    std::array<double, population::WORKPLACE_COUNT> meanInteractionsPerNetwork = {{
+        params.mean_work_interactions_child / params.daily_fraction_work,
+        params.mean_work_interactions_child / params.daily_fraction_work,
+        params.mean_work_interactions_adult / params.daily_fraction_work,
+        params.mean_work_interactions_elderly / params.daily_fraction_work,
+        params.mean_work_interactions_elderly / params.daily_fraction_work}};
+
+    std::array<network::UndirectedNetwork, population::WORKPLACE_COUNT> workplaceNetworks = {};
+    for (population::WorkplaceUnderlyingType widx = 0; widx < population::WORKPLACE_COUNT; ++widx) {
+        const std::uint64_t N = workplaceMembers[widx].size();
+        // Round to nearest even number. This might want to be always round up instead @todo
+        std::uint32_t meanInteractions = static_cast<std::uint32_t>(std::nearbyint(meanInteractionsPerNetwork[widx] / 2.0) * 2.0);
+        // @todo - test / cleaner handling of different N and K values.
+        if (meanInteractions >= N) {
+            // @todo - this feels brittle.
+            meanInteractions = N - 1;
+        }
+
+        // Generate the small world network, unless N is too small, or meanInteractions is too small
+        if (N > 2 && meanInteractions > 1) {
+            // Shuffle the network, to avoid people working with others in their same household a disproportionate amount for low values of work_network_rewire
+            std::shuffle(workplaceMembers[widx].begin(), workplaceMembers[widx].end(), rng);
+            // Generate the small world network
+            workplaceNetworks[widx] = network::generateSmallWorldUndirectedNetwork(workplaceMembers[widx], meanInteractions, params.work_network_rewire, rng);
+        } else {
+            workplaceNetworks[widx] = network::generateFullyConnectedUndirectedNetwork(workplaceMembers[widx]);
+        }
+
+        // @todo - construct a flame gpu 2 static graph. @todo - check if this can be done from an init function.
+    }
+
+    // Get a handle to the FLAME GPU workplace directed graph
+    // This will contain all workplace information, i.e. a single graph data structure containing 5 unconnected graphs
+    // The agent's ID will be used as the vertex keys, so will also be 1 indexed.
+    // This will then allow agents to simply lookup their neighbours and
+    // FLAME GPU's graphs are accessed by their string name, but agents can't have string properties, hence using a single graph.
+    // Representing a undirected graph using a directed graph will consume twice as much device memory as required, but only digraphs are currently implemented in FLAME GPU 2.
+    
+
+    // With the small world networks generated, associate them with the model for use in workplace interactions.
     std::uint32_t idx = 0;
     for (auto person : *pop) {
         // get the assigned workplace
         std::uint32_t workplaceIdx = person.getVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
         // Lookup the generated size
-        std::uint32_t workplaceSize = peoplePerWorkplace[workplaceIdx];
+        std::uint32_t workplaceSize = static_cast<std::uint32_t>(workplaceMembers[workplaceIdx].size());
+        // @todo - add the small world network access method to the model
         // Store in the agent's data, for faster lookup. @todo - refactor to a env property if maximum workplace count is definitely known at model definition time?
+        // @todo - replace with the individuals in and/or out degree?
         person.setVariable<std::uint32_t>(person::v::WORKPLACE_SIZE, workplaceSize);
-        // int counter
         ++idx;
     }
 
@@ -250,9 +255,11 @@ std::unique_ptr<flamegpu::AgentVector> generate(flamegpu::ModelDescription& mode
         fmt::print("  80+   = {}\n", createdPerDemographic[8]);
         fmt::print("}}\n");
         fmt::print("Workplaces {{\n");
-        fmt::print("  children: {}, adults {}\n", n_children,  peoplePerWorkplace[0] - n_children);
-        fmt::print("  adults {}\n", peoplePerWorkplace[1]);
-        fmt::print("  adults {}, elderly {}\n", peoplePerWorkplace[2] - n_elderly, n_elderly);
+        fmt::print("  00-09: {}, 20_69 {}\n", createdPerDemographic[0],  workplaceMembers[Workplace::WORKPLACE_SCHOOL_0_9].size() - createdPerDemographic[demographics::Age::AGE_0_9]);
+        fmt::print("  10-19: {}, 20_69 {}\n", createdPerDemographic[demographics::Age::AGE_10_19],  workplaceMembers[Workplace::WORKPLACE_SCHOOL_0_9].size() - createdPerDemographic[demographics::Age::AGE_10_19]);
+        fmt::print("  20_69 {}\n", workplaceMembers[Workplace::WORKPLACE_ADULT].size());
+        fmt::print("  20_69 {}, 70_79 {}\n", workplaceMembers[Workplace::WORKPLACE_70_79].size() - createdPerDemographic[demographics::Age::AGE_70_79], createdPerDemographic[demographics::Age::AGE_70_79]);
+        fmt::print("  20_69 {}, 80+ {}\n", workplaceMembers[Workplace::WORKPLACE_80_PLUS].size() -  - createdPerDemographic[demographics::Age::AGE_80], createdPerDemographic[demographics::Age::AGE_80]);
         fmt::print("}}\n");
     }
 
@@ -332,9 +339,9 @@ std::vector<HouseholdStructure> generateHouseholdStructures(const exateppabm::in
 
     // create enough households for the whole population using the uniform distribution and cumulative probability vector. Ensure the last household is not too large.
     while (remainingPeople > 0) {
-        double r_housesize = dist(rng);
+        double r_houseSize = dist(rng);
         for (std::size_t idx = 0; idx < static_cast<HouseholdSizeType>(householdSizeProbabilityVector.size()); idx++) {
-            if (r_housesize < householdSizeProbabilityVector[idx]) {
+            if (r_houseSize < householdSizeProbabilityVector[idx]) {
                 HouseholdStructure household = {};
                 household.size = static_cast<HouseholdSizeType>(idx + 1) <= remainingPeople ? static_cast<HouseholdSizeType>(idx + 1) : remainingPeople;
                 household.agePerPerson.reserve(household.size);
@@ -380,6 +387,57 @@ std::vector<HouseholdStructure> generateHouseholdStructures(const exateppabm::in
         fmt::print("generated mean household size {}\n", generatedMeanPeoplePerHouseSize);
     }
     return households;
+}
+
+std::array<double, WORKPLACE_COUNT> getAdultWorkplaceCumulativeProbabilityArray(const double child_network_adults, const double elderly_network_adults, std::array<std::uint64_t, demographics::AGE_COUNT> n_per_age) {
+    // Adults are assigned to a work place network randomly, using a probability distribution which (for a large enough sample) will match the target ratios of adults to other workplace members, based on the child_network_adults and elderly_network_adults parameters
+    std::uint64_t n_0_9 = n_per_age[demographics::Age::AGE_0_9];
+    std::uint64_t n_10_19 = n_per_age[demographics::Age::AGE_10_19];
+    std::uint64_t n_70_79 = n_per_age[demographics::Age::AGE_70_79];
+    std::uint64_t n_80_plus = n_per_age[demographics::Age::AGE_80];
+    std::uint64_t n_adult = n_per_age[demographics::Age::AGE_20_29] + n_per_age[demographics::Age::AGE_30_39] + n_per_age[demographics::Age::AGE_40_49] + n_per_age[demographics::Age::AGE_50_59] + n_per_age[demographics::Age::AGE_60_69];
+
+    // Initialise with the target number of adults in each network
+    std::array<double, WORKPLACE_COUNT> p_adultPerWorkNetwork = {0};
+    // p of each category is target number / number adults
+    p_adultPerWorkNetwork[Workplace::WORKPLACE_SCHOOL_0_9] = (child_network_adults * n_0_9) / n_adult;
+    p_adultPerWorkNetwork[Workplace::WORKPLACE_SCHOOL_10_19] = (child_network_adults * n_10_19) / n_adult;
+    p_adultPerWorkNetwork[Workplace::WORKPLACE_70_79] = (elderly_network_adults * n_70_79) / n_adult;
+    p_adultPerWorkNetwork[Workplace::WORKPLACE_80_PLUS] = (elderly_network_adults * n_80_plus) / n_adult;
+
+    // p of being adult is then the remaining probability
+    p_adultPerWorkNetwork[Workplace::WORKPLACE_ADULT] = 1.0 - std::accumulate(p_adultPerWorkNetwork.begin(), p_adultPerWorkNetwork.end(), 0.0);
+
+    // Then convert to cumulative probability with an inclusive scan
+    exateppabm::util::inclusive_scan(p_adultPerWorkNetwork.begin(), p_adultPerWorkNetwork.end(), p_adultPerWorkNetwork.begin());
+
+    // make sure the top bracket ends in a value in case of floating point / rounding >= 1.0
+    p_adultPerWorkNetwork[Workplace::WORKPLACE_80_PLUS] = 1.0;
+
+    return p_adultPerWorkNetwork;
+}
+
+WorkplaceUnderlyingType generateWorkplaceForIndividual(const demographics::Age age, std::array<double, WORKPLACE_COUNT> p_adult_workplace, std::mt19937_64 & rng) {
+    // Children, retired and elderly are assigned a network based on their age
+    if (age == demographics::Age::AGE_0_9) {
+        return Workplace::WORKPLACE_SCHOOL_0_9;
+    } else if (age == demographics::Age::AGE_10_19) {
+        return Workplace::WORKPLACE_SCHOOL_10_19;
+    } else if (age == demographics::Age::AGE_70_79) {
+        return Workplace::WORKPLACE_70_79;
+    } else if (age == demographics::Age::AGE_80) {
+        return Workplace::WORKPLACE_80_PLUS;
+    } else {
+        // Adults randomly sample using a cumulative probability distribution computed from population counts and model parameters
+        std::uniform_real_distribution<double> work_network_dist(0.0, 1.0);
+        float r = work_network_dist(rng);
+        for (std::uint32_t i = 0; i < p_adult_workplace.size(); i++) {
+            if (r < p_adult_workplace[i]) {
+                return i;
+            }
+        }
+        throw std::runtime_error("@todo - invalid cumulative probability distribution for p_adult_workplace?");
+    }
 }
 
 }  // namespace population

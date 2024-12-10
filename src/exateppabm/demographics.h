@@ -45,7 +45,6 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
  * Get an array containing one of each age demographic enum
  * 
  * This is a workaround for the lack of reflection in c++17, used to simplify code elsewhere
- * @todo constexpr? return refernce?
  * @return std::array which is the inverse of the Age enum.
  */
 std::array<demographics::Age, demographics::AGE_COUNT> getAllAgeDemographics();

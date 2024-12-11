@@ -13,8 +13,8 @@ void setup(CLI::App& app, std::shared_ptr<exateppabm::cli::params> params) {
     app.add_flag("-v, --verbose", params->verbosity, "Verbosity of simulation output, forwarded to FLAME GPU 2");
     app.add_option("-i, --input-file", params->inputParamFile, "Path to input parameters file");
     app.add_option("-n, --param-number", params->inputParamLine, "The line from the parameters file to use. 1 indexed (assuming there is a header)");
-
     app.add_option("-o, --output-dir", params->outputDir, "Path to output directory");
+    app.add_flag("--individual-file", params->individualFile, "Enable the creation of the per individual file");
 }
 
 void print(const exateppabm::cli::params params) {
@@ -22,7 +22,9 @@ void print(const exateppabm::cli::params params) {
     fmt::print("  device = {}\n", params.device);
     fmt::print("  verbosity = {}\n", params.verbosity);
     fmt::print("  inputParamFile = {}\n", params.inputParamFile);
+    fmt::print("  inputParamLine = {}\n", params.inputParamLine);
     fmt::print("  outputDir = {}\n", params.outputDir);
+    fmt::print("  individualFile = {}\n", params.individualFile);
     fmt::print("}}\n");
 }
 

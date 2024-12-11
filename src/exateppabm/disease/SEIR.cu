@@ -94,9 +94,6 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     env.newProperty<float>("mean_time_to_susceptible", params.mean_time_to_susceptible);
     env.newProperty<float>("sd_time_to_susceptible", params.sd_time_to_susceptible);
 
-    // Define the temporary, hardcoded spatial infection interaction radius?
-    // env.setProperty<float>("INFECTION_INTERACTION_RADIUS", interactionRadius);
-
     // Get a handle for the Person agent type
     flamegpu::AgentDescription person = model.Agent(exateppabm::person::NAME);
 

@@ -7,6 +7,7 @@
 
 #include "exateppabm/output/OutputFile.h"
 #include "exateppabm/output/TimeSeriesFile.h"
+#include "exateppabm/output/PerIndividualFile.h"
 #include "exateppabm/person.h"
 #include "exateppabm/population.h"
 #include "exateppabm/demographics.h"
@@ -25,6 +26,9 @@ std::filesystem::path _outputDirectory;
 
 // Object representing the time series output file
 std::unique_ptr<TimeSeriesFile> _timeSeriesFile = nullptr;
+
+// Object representing the per individual file
+std::unique_ptr<PerIndividualFile> _perIndividualFile = nullptr;
 
 }  // namespace
 
@@ -86,13 +90,6 @@ FLAMEGPU_STEP_FUNCTION(output_step) {
         observations.total_infected += totalInfectedPerDemographic[i];
     }
 
-    /*
-    // @todo - not currently used direct agent data iteration
-    for (const auto& person : population) {
-        auto infected = person.getVariable<exateppabm::disease::SEIR::InfectionStateUnderlyingType>(exateppabm::person::v::INFECTION_STATE);
-    }
-    */
-
     // Append this steps' data to the namespace-scoped data structure
     _timeSeriesFile->appendObservations(observations);
 }
@@ -107,8 +104,35 @@ FLAMEGPU_EXIT_FUNCTION(output_exit) {
     _timeSeriesFile->close();
 }
 
+
+FLAMEGPU_EXIT_FUNCTION(output_exit_per_individual) {
+    // Collect per agent data
+    // Get a handle to the person agent host api object
+    auto personAgent = FLAMEGPU->agent(exateppabm::person::NAME, exateppabm::person::states::DEFAULT);
+    // Get a handle to the person agent population on the host
+    flamegpu::DeviceAgentVector population = personAgent.getPopulationData();
+    for (const auto& person : population) {
+        exateppabm::output::PerIndividualFile::Person personData = {};
+        personData.id = static_cast<std::uint32_t>(person.getVariable<flamegpu::id_t>(person::v::ID));
+        personData.age_group = person.getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
+        personData.occupation_network = person.getVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
+        personData.house_no = person.getVariable<std::uint32_t>(person::v::HOUSEHOLD_IDX);
+        personData.infection_count = person.getVariable<std::uint32_t>(person::v::INFECTION_COUNT);
+        _perIndividualFile->appendPerson(personData);
+    }
+
+
+    // Write the per individual data to disk
+    // Open the file handle
+    _perIndividualFile->open();
+    // Write data to the opened file
+    _perIndividualFile->write();
+    // Close the file handle
+    _perIndividualFile->close();
+}
+
 // @todo - may need to split this due to order of execution within init/step/exit funcs, if any others exist.
-void define(flamegpu::ModelDescription& model, const std::filesystem::path outputDirectory) {
+void define(flamegpu::ModelDescription& model, const std::filesystem::path outputDirectory, const bool individualFile) {
     // Store the output directory for access in the FLAME GPU exit function (and init?)
     // This will want refactoring for ensembles
     _outputDirectory = outputDirectory;
@@ -121,6 +145,12 @@ void define(flamegpu::ModelDescription& model, const std::filesystem::path outpu
     model.addStepFunction(output_step);
     // Add the exit function to the model
     model.addExitFunction(output_exit);
+
+    // optionally prepare for per individual file output
+    if (individualFile) {
+        _perIndividualFile = std::make_unique<PerIndividualFile>(_outputDirectory);
+        model.addExitFunction(output_exit_per_individual);
+    }
 }
 
 }  // namespace output

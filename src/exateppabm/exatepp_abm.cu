@@ -83,9 +83,7 @@ int entrypoint(int argc, char* argv[]) {
     flamegpu::ModelDescription model("ExaTEPP ABM demonstrator");
 
     // Add the person agent to the model description
-    const float env_width = std::ceil(std::sqrt(config->n_total));
-    constexpr float interactionRadius = 1.5f;
-    exateppabm::person::define(model, *config, env_width, interactionRadius);
+    exateppabm::person::define(model, *config);
 
     // Define demographic related variables
     exateppabm::demographics::define(model, *config);
@@ -93,8 +91,11 @@ int entrypoint(int argc, char* argv[]) {
     // Define disease related variables and methods
     exateppabm::disease::SEIR::define(model, *config);
 
+    // Define init function for population generation
+    exateppabm::population::define(model, *config, cli_params->verbosity > 0);
+
     // Add init, step and exit functions related to data collection and output. This may want refactoring when multiple output files are supported or collected data becomes more complex.
-    exateppabm::output::define(model, cli_params->outputDir);
+    exateppabm::output::define(model, cli_params->outputDir, cli_params->individualFile);
 
     // Build the model control flow. This will want abstracting more in the future @todo
     // @note - not using the DAG control flow due to bugs encountered in another project when splitting between compilation units.
@@ -113,6 +114,11 @@ int entrypoint(int argc, char* argv[]) {
 
     // Setup simulation configuration options
 
+    // If verbosity is high enough (-vvv or more) then enable flamegpu's verbose output
+    if (cli_params->verbosity > 2) {
+        simulation.SimulationConfig().verbosity = flamegpu::Verbosity::Verbose;
+    }
+
     simulation.SimulationConfig().steps = config->duration;  // @todo - change this to be controlled by an exit condition?
 
     // Seed the FLAME GPU 2 RNG seed. This is independent from RNG on the host, but we only have one RNG engine available in FLAME GPU 2 currently.
@@ -120,15 +126,6 @@ int entrypoint(int argc, char* argv[]) {
 
     // Set the GPU index
     simulation.CUDAConfig().device_id = cli_params->device;
-
-    // Generate the population of agents.
-    // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
-    const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
-    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0, env_width, interactionRadius);
-    if (personPopulation == nullptr) {
-        throw std::runtime_error("@todo - bad population generation function.");
-    }
-    simulation.setPopulationData(*personPopulation);
 
     perfFile.timers.preSimulate.stop();
 

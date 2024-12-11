@@ -21,9 +21,11 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/network.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/OutputFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerformanceFile.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerIndividualFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.h
@@ -35,8 +37,11 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/network.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerformanceFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/PerIndividualFile.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.cu
@@ -83,10 +88,16 @@ endif()
 target_compile_options(${LIBRARY_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>")
 
 # Forward on the cmake build type as a macro definition, for performance output files. There's prolly a cleaner way to do this.
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:Release>:CMAKE_BUILD_TYPE=\"Release\">")
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:RelWithDebInfo>:CMAKE_BUILD_TYPE=\"RelWithDebInfo\">")
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:MinSizeRel>:CMAKE_BUILD_TYPE=\"MinSizeRel\">")
-target_compile_definitions(${LIBRARY_NAME} PRIVATE "$<$<CONFIG:Debug>:CMAKE_BUILD_TYPE=\"Debug\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:Release>:CMAKE_BUILD_TYPE=\"Release\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:RelWithDebInfo>:CMAKE_BUILD_TYPE=\"RelWithDebInfo\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:MinSizeRel>:CMAKE_BUILD_TYPE=\"MinSizeRel\">")
+target_compile_definitions(${LIBRARY_NAME} PUBLIC "$<$<CONFIG:Debug>:CMAKE_BUILD_TYPE=\"Debug\">")
+
+# Set the upper limit of the per agent max random interaction count
+if(EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS GREATER 0)
+    target_compile_definitions(${LIBRARY_NAME} PUBLIC "EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS=${EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS}")
+endif()
+
 
 # Add src directory to include path, publicly so that the target library inherits this dependency (for now).
 target_include_directories("${LIBRARY_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")

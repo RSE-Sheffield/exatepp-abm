@@ -15,6 +15,8 @@ namespace exateppabm {
 namespace input {
 namespace {
 
+constexpr char header[] = "rng_seed,param_id,duration,n_total,n_seed_infection,population_0_9,population_10_19,population_20_29,population_30_39,population_40_49,population_50_59,population_60_69,population_70_79,population_80,household_size_1,household_size_2,household_size_3,household_size_4,household_size_5,household_size_6,p_interaction_susceptible_to_exposed,mean_time_to_infected,sd_time_to_infected,mean_time_to_recovered,sd_time_to_recovered,mean_time_to_susceptible,sd_time_to_susceptible,relative_susceptibility_0_9,relative_susceptibility_10_19,relative_susceptibility_20_29,relative_susceptibility_30_39,relative_susceptibility_40_49,relative_susceptibility_50_59,relative_susceptibility_60_69,relative_susceptibility_70_79,relative_susceptibility_80,child_network_adults,elderly_network_adults,relative_transmission_household,relative_transmission_occupation,relative_transmission_random,mean_work_interactions_child,mean_work_interactions_adult,mean_work_interactions_elderly,daily_fraction_work,work_network_rewire,mean_random_interactions_0_19,sd_random_interactions_0_19,mean_random_interactions_20_69,sd_random_interactions_20_69,mean_random_interactions_70plus,sd_random_interactions_70plus";  //NOLINT
+
 /**
  * Get the next value from a csv row as a specified type
  *
@@ -24,20 +26,26 @@ bool valueFromCSVLine(std::string& line, T& value) {
     // trim whitespace
     line.erase(0, line.find_first_not_of(' '));
     line.erase(line.find_last_not_of(' ') + 1);
-    std::istringstream iss(line);
+
+    // If the line is empty, do nothing?
+    if (line.length() == 0) {
+        return false;
+    }
+
+    // Find the first comma
+    size_t pos = line.find(',');
+    std::string valueString = pos != std::string::npos ? line.substr(0, pos) : line;
+    // Shorten line.
+    line = pos != std::string::npos ? line.substr(pos + 1) : "";
+
+    // Create an istring stream and attempt to parse into value
+    std::istringstream iss(valueString);
     if (iss >> value) {
-        char comma;
-        iss >> comma;
-        if (comma != ',') {
-            // If the next character is not a comma, we've reached the end
-            line.clear();
-            return true;
-        }
-        // Remove the consumed part from the string
-        size_t pos = line.find(',');
-        line = line.substr(pos + 1);
+        // success
         return true;
     } else {
+        // failure
+        // @todo - warn about the value not matching the type here? outside has better info though for the error message
         return false;
     }
 }
@@ -72,6 +80,10 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
         if (!std::getline(fs, line)) {
             throw std::runtime_error("failed to read the header line @todo nicer error message");
         }
+        // Warn if the header is not the expected value
+        if (strcmp(line.c_str(), header) != 0) {
+            fmt::print("Warning: {} header does not match the expected value. Errors may occur, or parameters may be used incorrectly.\nExpected header:\n{}\n", p.c_str(), header);
+        }
 
         // Discard rows until the line number is the target line number
         for (int currentLine = 1; currentLine < lineNumber; currentLine++) {
@@ -97,7 +109,9 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->n_total)) {
                 throw std::runtime_error("bad value for n_total during csv parsing @todo\n");
             }
-
+            if (!valueFromCSVLine(line, c->n_seed_infection)) {
+                throw std::runtime_error("bad value for n_seed_infection during csv parsing @todo\n");
+            }
             if (!valueFromCSVLine(line, c->population_0_9)) {
                 throw std::runtime_error("bad value for population_0_9 during csv parsing @todo\n");
             }
@@ -125,8 +139,23 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->population_80)) {
                 throw std::runtime_error("bad value for population_80 during csv parsing @todo\n");
             }
-            if (!valueFromCSVLine(line, c->n_seed_infection)) {
-                throw std::runtime_error("bad value for n_seed_infection during csv parsing @todo\n");
+            if (!valueFromCSVLine(line, c->household_size_1)) {
+                throw std::runtime_error("bad value for household_size_1 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_2)) {
+                throw std::runtime_error("bad value for household_size_2 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_3)) {
+                throw std::runtime_error("bad value for household_size_3 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_4)) {
+                throw std::runtime_error("bad value for household_size_4 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_5)) {
+                throw std::runtime_error("bad value for household_size_5 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->household_size_6)) {
+                throw std::runtime_error("bad value for household_size_6 during csv parsing @todo\n");
             }
             if (!valueFromCSVLine(line, c->p_interaction_susceptible_to_exposed)) {
                 throw std::runtime_error("bad value for p_interaction_susceptible_to_exposed during csv parsing @todo\n");
@@ -176,6 +205,54 @@ std::shared_ptr<exateppabm::input::config> read(const std::filesystem::path p, c
             if (!valueFromCSVLine(line, c->relative_susceptibility_80)) {
                 throw std::runtime_error("bad value for relative_susceptibility_80 during csv parsing @todo\n");
             }
+            if (!valueFromCSVLine(line, c->child_network_adults)) {
+                throw std::runtime_error("bad value for child_network_adults during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->elderly_network_adults)) {
+                throw std::runtime_error("bad value for elderly_network_adults during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_transmission_household)) {
+                throw std::runtime_error("bad value for relative_transmission_household during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_transmission_occupation)) {
+                throw std::runtime_error("bad value for relative_transmission_occupation during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->relative_transmission_random)) {
+                throw std::runtime_error("bad value for relative_transmission_random during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_work_interactions_child)) {
+                throw std::runtime_error("bad value for mean_work_interactions_child during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_work_interactions_adult)) {
+                throw std::runtime_error("bad value for mean_work_interactions_adult during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_work_interactions_elderly)) {
+                throw std::runtime_error("bad value for mean_work_interactions_elderly during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->daily_fraction_work)) {
+                throw std::runtime_error("bad value for daily_fraction_work during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->work_network_rewire)) {
+                throw std::runtime_error("bad value for work_network_rewire during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_random_interactions_0_19)) {
+                throw std::runtime_error("bad value for mean_random_interactions_0_19 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_random_interactions_0_19)) {
+                throw std::runtime_error("bad value for sd_random_interactions_0_19 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_random_interactions_20_69)) {
+                throw std::runtime_error("bad value for mean_random_interactions_20_69 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_random_interactions_20_69)) {
+                throw std::runtime_error("bad value for sd_random_interactions_20_69 during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->mean_random_interactions_70plus)) {
+                throw std::runtime_error("bad value for mean_random_interactions_70plus during csv parsing @todo\n");
+            }
+            if (!valueFromCSVLine(line, c->sd_random_interactions_70plus)) {
+                throw std::runtime_error("bad value for sd_random_interactions_70plus during csv parsing @todo\n");
+            }
 
         } else {
             throw std::runtime_error("failed to read the paramameter value line @todo nicer error message");
@@ -196,6 +273,7 @@ void print(exateppabm::input::config config) {
     fmt::print("  param_id = {}\n", config.param_id);
     fmt::print("  duration = {}\n", config.duration);
     fmt::print("  n_total = {}\n", config.n_total);
+    fmt::print("  n_seed_infection = {}\n", config.n_seed_infection);
     fmt::print("  population_0_9 = {}\n", config.population_0_9);
     fmt::print("  population_10_19 = {}\n", config.population_10_19);
     fmt::print("  population_20_29 = {}\n", config.population_20_29);
@@ -205,7 +283,12 @@ void print(exateppabm::input::config config) {
     fmt::print("  population_60_69 = {}\n", config.population_60_69);
     fmt::print("  population_70_79 = {}\n", config.population_70_79);
     fmt::print("  population_80 = {}\n", config.population_80);
-    fmt::print("  n_seed_infection = {}\n", config.n_seed_infection);
+    fmt::print("  household_size_1 = {}\n", config.household_size_1);
+    fmt::print("  household_size_2 = {}\n", config.household_size_2);
+    fmt::print("  household_size_3 = {}\n", config.household_size_3);
+    fmt::print("  household_size_4 = {}\n", config.household_size_4);
+    fmt::print("  household_size_5 = {}\n", config.household_size_5);
+    fmt::print("  household_size_6 = {}\n", config.household_size_6);
     fmt::print("  p_interaction_susceptible_to_exposed = {}\n", config.p_interaction_susceptible_to_exposed);
     fmt::print("  mean_time_to_infected = {}\n", config.mean_time_to_infected);
     fmt::print("  sd_time_to_infected = {}\n", config.sd_time_to_infected);
@@ -222,6 +305,22 @@ void print(exateppabm::input::config config) {
     fmt::print("  relative_susceptibility_60_69 = {}\n", config.relative_susceptibility_60_69);
     fmt::print("  relative_susceptibility_70_79 = {}\n", config.relative_susceptibility_70_79);
     fmt::print("  relative_susceptibility_80 = {}\n", config.relative_susceptibility_80);
+    fmt::print("  child_network_adults = {}\n", config.child_network_adults);
+    fmt::print("  elderly_network_adults = {}\n", config.elderly_network_adults);
+    fmt::print("  relative_transmission_household = {}\n", config.relative_transmission_household);
+    fmt::print("  relative_transmission_occupation = {}\n", config.relative_transmission_occupation);
+    fmt::print("  relative_transmission_random = {}\n", config.relative_transmission_occupation);
+    fmt::print("  mean_work_interactions_child = {}\n", config.mean_work_interactions_child);
+    fmt::print("  mean_work_interactions_adult = {}\n", config.mean_work_interactions_adult);
+    fmt::print("  mean_work_interactions_elderly = {}\n", config.mean_work_interactions_elderly);
+    fmt::print("  daily_fraction_work = {}\n", config.daily_fraction_work);
+    fmt::print("  work_network_rewire = {}\n", config.work_network_rewire);
+    fmt::print("  mean_random_interactions_0_19 = {}\n", config.mean_random_interactions_0_19);
+    fmt::print("  sd_random_interactions_0_19 = {}\n", config.sd_random_interactions_0_19);
+    fmt::print("  mean_random_interactions_20_69 = {}\n", config.mean_random_interactions_20_69);
+    fmt::print("  sd_random_interactions_20_69 = {}\n", config.sd_random_interactions_20_69);
+    fmt::print("  mean_random_interactions_70plus = {}\n", config.mean_random_interactions_70plus);
+    fmt::print("  sd_random_interactions_70plus = {}\n", config.sd_random_interactions_70plus);
     fmt::print("}}\n");
 }
 

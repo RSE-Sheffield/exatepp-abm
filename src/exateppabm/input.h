@@ -28,6 +28,10 @@ struct config {
      */
     std::uint32_t n_total = 1024;
     /**
+     * The number of individuals who should be infected at the start of the simulation
+     */
+    std::uint32_t n_seed_infection = 1;
+    /**
      * Reference size for the number of individuals within the 0_9 age demographic, used to compute ratios for population initialisation
      */
     std::uint64_t population_0_9 = 1;
@@ -64,9 +68,29 @@ struct config {
      */
     std::uint64_t population_80 = 1;
     /**
-     * The number of individuals who should be infected at the start of the simulation
+     * Reference size for the number of households with 1 person, used for household generation
      */
-    std::uint32_t n_seed_infection = 1;
+    std::uint64_t household_size_1 = 1;
+    /**
+     * Reference size for the number of households with 2 people, used for household generation
+     */
+    std::uint64_t household_size_2 = 1;
+    /**
+     * Reference size for the number of households with 3 people, used for household generation
+     */
+    std::uint64_t household_size_3 = 1;
+    /**
+     * Reference size for the number of households with 4 people, used for household generation
+     */
+    std::uint64_t household_size_4 = 1;
+    /**
+     * Reference size for the number of households with 5 people, used for household generation
+     */
+    std::uint64_t household_size_5 = 1;
+    /**
+     * Reference size for the number of households with 6+ people, used for household generation. 6+ chosen as largest band based on ONS estimates https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/families/datasets/householdsbyhouseholdsizeregionsofenglandandgbconstituentcountries
+     */
+    std::uint64_t household_size_6 = 1;
     /**
      * The probability of an interaction between an infected individual and a susceptible individual resulting in an infection, prior to any susceptibility modifier.
      * This is not directly based on a parameter in the reference model
@@ -76,7 +100,7 @@ struct config {
     /**
      * The mean time in days from exposed to infected state
      * Default value is arbitrary
-     * @todo - might be equivalent to mean_time_to_syptoms, depending on how asym works in the reference model.
+     * @todo - might be equivalent to mean_time_to_symptoms, depending on how the more complex disease model works in the reference model.
      */
     float mean_time_to_infected = 4;
     /**
@@ -149,6 +173,90 @@ struct config {
      * Arbitrary default value
      */
     float relative_susceptibility_80 = 1.0;
+    /**
+     * Proportion of adults to children in school networks (0-19)
+     */
+    double child_network_adults = 0.2;
+    /**
+     * Proportion of adults to elderly in work networks for retired/elderly individuals (70+)
+     */
+    double elderly_network_adults = 0.2;
+    /**
+     * Relative transmission rate for interactions within the household
+     * Arbitrary default value
+     */
+    float relative_transmission_household = 2.0f;
+    /**
+     * Relative transmission rate for interactions within the occupation network 
+     * Arbitrary default value
+     */
+    float relative_transmission_occupation = 1.0f;
+    /**
+     * Relative transmission rate for interactions within the random daily network 
+     * Arbitrary default value
+     */
+    float relative_transmission_random = 1.0f;
+    /**
+     * Mean daily interactions at school (0-19)
+     * This parameter is used during small world network generation (k)
+     * Arbitrary default value
+     */
+    double mean_work_interactions_child = 10;
+    /**
+     * Mean daily interactions at adult workplaces (20-69)
+     * This parameter is used during small world network generation (k)
+     * Arbitrary default value
+     */
+    double mean_work_interactions_adult = 7.5;
+    /**
+     * Mean daily interactions at equivalent to workplace for older people (70+)
+     * This parameter is used during small world network generation (k)
+     * Arbitrary default value
+     */
+    double mean_work_interactions_elderly = 3;
+    /**
+     * Fraction of people in work network interacted with per day
+     * 
+     * This modifies the small world generation initial mean to create larger clusters, allowing for random sampling by this factor on each day
+     * 
+     * Arbitrary default value
+     */
+    double daily_fraction_work = 0.5;
+    /**
+     * Small world network rewire parameter (probability) for workplaces, in range [0, 1]
+     * Arbitrary default
+     */
+    double work_network_rewire = 0.1;
+    /**
+     * Mean number of random interactions for 0-19 age individuals
+     * Arbitrary default value
+     */
+    double mean_random_interactions_0_19 = 2u;
+    /**
+     * Standard deviation for the number of random interactions per day for 0-19 age individuals
+     * Default value is arbitrary
+     */
+    double sd_random_interactions_0_19 = 2u;
+    /**
+     * Mean number of random interactions for 20-69 age individuals
+     * Arbitrary default value
+     */
+    double mean_random_interactions_20_69 = 4u;
+    /**
+     * Standard deviation for the number of random interactions per day for 20-69 age individuals
+     * Default value is arbitrary
+     */
+    double sd_random_interactions_20_69 = 4u;
+    /**
+     * Mean number of random interactions for 70+ age individuals
+     * Arbitrary default value
+     */
+    double mean_random_interactions_70plus = 2u;
+    /**
+     * Standard deviation for the number of random interactions per day for 70+ age individuals
+     * Default value is arbitrary
+     */
+    double sd_random_interactions_70plus = 2u;
 };
 
 /**

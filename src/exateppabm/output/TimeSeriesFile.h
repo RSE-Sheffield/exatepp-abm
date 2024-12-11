@@ -120,6 +120,7 @@ class TimeSeriesFile : public OutputFile {
  private:
     /**
      * Default filename for output
+     * @todo - factor in the run index for ensembles?
      */
     constexpr static char DEFAULT_FILENAME[] = "timeseries.csv";
     /**

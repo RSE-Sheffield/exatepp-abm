@@ -1,7 +1,10 @@
 #include "exateppabm/visualisation.h"
 #include <fmt/core.h>
 
+#include <array>
 #include <memory>
+#include <tuple>
+#include <vector>
 #include "flamegpu/flamegpu.h"
 #include "exateppabm/person.h"
 #include "exateppabm/disease/SEIR.h"
@@ -91,6 +94,49 @@ void join() {
     if (_modelVis && _enabled) {
         _modelVis->join();
     }
+#endif  // FLAMEGPU_VISUALISATION
+}
+
+std::tuple<float, float, float> getAgentXYZ(const std::uint32_t householdCount, const std::uint32_t householdIdx, const std::uint8_t idxWithinHousehold) {
+#if defined(FLAMEGPU_VISUALISATION)
+    // Use the number of households to figure out the size of a 2D grid for visualisation purposes
+    std::uint64_t visHouseholdGridwidth = static_cast<std::uint64_t>(std::ceil(std::sqrt(static_cast<double>(householdCount))));
+    // Prep a vector of integers to find the location within a household for each individual
+    static auto visAssignedHouseholdCount = std::vector<std::uint8_t>(householdCount, 0);
+    // pre-calculate spatial offset per individual within household, for upto 6 individuals per household (current hardcoded upper limit)
+    constexpr float OFFSET_SF = 0.7f;
+    static std::array<float, 6> visHouseholdOffsetX = {{0.f
+        , OFFSET_SF * static_cast<float>(std::sin(0 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(72 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(144 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(216 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::sin(288 * M_PI / 180.0))}};
+    static std::array<float, 6> visHouseholdOffsetY = {{0.f
+        , OFFSET_SF * static_cast<float>(std::cos(0 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(72 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(144 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(216 * M_PI / 180.0))
+        , OFFSET_SF * static_cast<float>(std::cos(288 * M_PI / 180.0))}};
+
+        // Get teh x/y/z for the provided individual within their household
+        // Get the center point of their household
+        std::uint32_t visHouseholdRow = householdIdx / visHouseholdGridwidth;
+        std::uint32_t visHouseholdCol = householdIdx % visHouseholdGridwidth;
+        // Get their index within their household [0-5]
+        std::uint8_t idxInHouse = visAssignedHouseholdCount[householdIdx];
+        visAssignedHouseholdCount[householdIdx]++;
+        // Get their arbitrary offset, given a vector of offsets (6 potential values)
+        constexpr float VIS_HOUSE_GRID_SPACING = 2.5f;
+        float visX = (visHouseholdCol * VIS_HOUSE_GRID_SPACING) + visHouseholdOffsetX[idxInHouse % visHouseholdOffsetX.size()];
+        float visY = (visHouseholdRow * VIS_HOUSE_GRID_SPACING) + visHouseholdOffsetY[idxInHouse % visHouseholdOffsetY.size()];
+        float visZ = 0;
+        // Set the x,y and z in agent data. These must be floats.
+        // person.setVariable<float>(exateppabm::person::v::x, visX);
+        // person.setVariable<float>(exateppabm::person::v::y, visY);
+        // person.setVariable<float>(exateppabm::person::v::z, visZ);
+        return std::tuple<float, float, float>(visX, visY, visZ);
+#else
+    return std::tuple<float, float, float>(0.0, 0.0, 0.0);
 #endif  // FLAMEGPU_VISUALISATION
 }
 

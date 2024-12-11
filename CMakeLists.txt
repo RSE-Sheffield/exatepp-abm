@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.18...3.25 FATAL_ERROR)
 
 # Optionally set the version of flamegpu which should be used, ideally a tag (i.e. `v2.0.0-rc`) or branch name, or potentially a commit hash.
-set(FLAMEGPU_VERSION "v2.0.0-rc.1" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag to use")
+set(FLAMEGPU_VERSION "v2.0.0-rc.2" CACHE STRING "FLAMEGPU/FLAMEGPU2 git branch or tag to use")
 # If the above version is a hash instead, also set FLAMEGPU_VERSION_ALLOW_HASH to ON
 # set(FLAMEGPU_VERSION_ALLOW_HASH "ON")
 
@@ -28,6 +28,11 @@ endif()
 option(BUILD_TESTING "Build the testing tree." OFF)
 # Option to enable google test test discovery
 cmake_dependent_option(ENABLE_GTEST_DISCOVER "Enable GTEST_DISCOVER for more detailed ctest output without -VV. This dramatically increases test suite runtime to CUDA context initialisation." OFF "BUILD_TESTING" OFF)
+
+# CMAke Cache option for the maximum number of per-agent random interactions.
+# If the value is changed here, CMakeCache.txt / the build dir will need deleting
+# Or reconfigure with -DEXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS=<new>
+set(EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS "20" CACHE STRING "Maximum number of random daily interactions per agent")
 
 # Include common rules from the FLAMEGPU/FLAMEGPU2 repositories CMake
 include(${FLAMEGPU_ROOT}/cmake/common.cmake)

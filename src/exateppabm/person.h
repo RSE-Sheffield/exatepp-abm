@@ -48,6 +48,7 @@ namespace v {
 DEVICE_CONSTEXPR_STRING constexpr char x[] = "x";
 DEVICE_CONSTEXPR_STRING constexpr char y[] = "y";
 DEVICE_CONSTEXPR_STRING constexpr char z[] = "z";
+DEVICE_CONSTEXPR_STRING constexpr char ID[] = "ID";  // Custom id, as FLAMEGPU getID isn't guaranteed to start at 1.
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE[] = "infection_state";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
@@ -56,7 +57,7 @@ DEVICE_CONSTEXPR_STRING constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_IDX[] = "household_idx";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_SIZE[] = "household_size";
 DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_IDX[] = "workplace_idx";
-DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_SIZE[] = "workplace_size";
+DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_OUT_DEGREE[] = "workplace_out_degree";
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_PARTNERS[] = "random_interaction_partners";
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT[] = "random_interaction_count";
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT_TARGET[] = "random_interaction_count_target";

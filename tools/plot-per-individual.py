@@ -36,9 +36,11 @@ def read_inputs(args):
 
     # Add string version of occupation network group
     OCCUPATION_NETWORK_MAP = {
-        0: "Children",
-        1: "Adult",
-        2: "Elderly",
+        0: "0-9",
+        1: "10-19",
+        2: "20-69",
+        3: "70-79",
+        4: "80+"
     }
     df["occupation_network_str"] = pd.Categorical(df["occupation_network"].map(OCCUPATION_NETWORK_MAP), list(OCCUPATION_NETWORK_MAP.values()))
     return df

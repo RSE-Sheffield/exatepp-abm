@@ -15,19 +15,18 @@ namespace exateppabm {
 namespace network {
 
 
-UndirectedNetwork generateFullyConnectedUndirectedNetwork(std::vector<flamegpu::id_t> nodes) {
-    UndirectedNetwork network = {};
-    network.nodes = nodes;
+UndirectedGraph generateFullyConnectedUndirectedGraph(std::vector<flamegpu::id_t> nodes) {
+    UndirectedGraph network(nodes);
     if (nodes.size() <= 1) {
         return network;
     }
     std::uint32_t N = static_cast<std::int32_t>(nodes.size());
     std::uint32_t E = (N * (N - 1)) / 2;
-    network.edges.reserve(E);
+    // network.edges.reserve(E);
     // Generate edges in ascending order for the undirected graph.
     for (std::uint32_t i = 0; i < N; ++i) {
         for (std::uint32_t j = i + 1; j < N; ++j) {
-            network.edges.push_back({i, j});
+            network.addEdge(i, j);
         }
     }
     return network;
@@ -35,13 +34,11 @@ UndirectedNetwork generateFullyConnectedUndirectedNetwork(std::vector<flamegpu::
 
 // @todo - should the initial lattice be randomised rather than sequential?
 // @todo - should the graph be directed or undirected? Data structure is directed, so do pairs need rewiring together?
-UndirectedNetwork generateSmallWorldUndirectedNetwork(std::vector<flamegpu::id_t> nodes, std::uint32_t K, double p_rewire, std::mt19937_64 rng) {
-    // fmt::print("@todo - check if small world network should be directed or undirected\n");
-    UndirectedNetwork network = {};
-    network.nodes = nodes;
+UndirectedGraph generateSmallWorldUndirectedGraph(std::vector<flamegpu::id_t> nodes, std::uint32_t K, double p_rewire, std::mt19937_64 rng) {
+    UndirectedGraph network(nodes);
 
     // Return early with an empty network if 0 or 1 nodes, so no room for non-self edges
-    if (network.nodes.size() <= 1) {
+    if (network.getNumVertices() <= 1) {
         return network;
     }
 
@@ -49,12 +46,12 @@ UndirectedNetwork generateSmallWorldUndirectedNetwork(std::vector<flamegpu::id_t
     if (K <= 1) {
         // throw std::runtime_error("@todo values - small world network K (" + std::to_string(K) + ") must be > 1");
         return network;
-    } else if (K == network.nodes.size()) {
+    } else if (K == network.getNumVertices()) {
         // If K == Node count, the graph is fully connected, so return a fully connected graph
-        return generateFullyConnectedUndirectedNetwork(nodes);
-    } else if (K >= network.nodes.size()) {
+        return generateFullyConnectedUndirectedGraph(nodes);
+    } else if (K >= network.getNumVertices()) {
         // Raise an exception if K is too large
-        throw std::runtime_error(std::string("@todo values - small world network K(") + std::to_string(K) + ") must be less than |N| (" + std::to_string(network.nodes.size()) + ")");
+        throw std::runtime_error(std::string("@todo values - small world network K(") + std::to_string(K) + ") must be less than |N| (" + std::to_string(network.getNumVertices()) + ")");
     }
     // If K is odd, use K-1
     if (K % 2 == 1) {
@@ -70,19 +67,14 @@ UndirectedNetwork generateSmallWorldUndirectedNetwork(std::vector<flamegpu::id_t
     // Use signed integers to make modulo possible
     std::int32_t N = static_cast<std::int32_t>(nodes.size());
     std::int32_t E = (N * K) / 2;
-    network.edges.reserve(E);
+
+    // network.edges.reserve(E);
     for (std::int32_t i = 0; i < N; ++i) {
         for (std::int32_t j = 1; j <= static_cast<std::int32_t>(K / 2); ++j) {
             // only add the positive undirected edges
             std::uint32_t s = static_cast<std::uint32_t>(i);
             std::uint32_t d = static_cast<std::uint32_t>((i + j) % N);
-            // Ensure that the edge source node is lower than the destination, to simplify avoiding duplicate edges
-            if (s > d) {
-                std::swap(s, d);
-            }
-            network.edges.push_back({s, d});
-            // network.edges.push_back({static_cast<std::uint32_t>(i), static_cast<std::uint32_t>((i + j) % N)});
-            // network.edges.push_back({static_cast<std::uint32_t>(i), static_cast<std::uint32_t>((i - j + N) % N)});
+            network.addEdge(s, d);
         }
     }
 
@@ -99,18 +91,27 @@ UndirectedNetwork generateSmallWorldUndirectedNetwork(std::vector<flamegpu::id_t
         // Get a uniform integer distribution from [0, N) for generating new edge indices
         std::uniform_int_distribution<std::uint32_t> dest_dist(0, N-1);
         // Randomly rewire edges
-        for (auto& edge : network.edges) {
+
+        // Take a copy of the network edges, to ensure we avoid iterator invalidation
+        // Only the current iterator should be removed in the undirected graph, so this is probably ok.
+        std::vector<network::Edge> copyOfEdges(network.getEdges().begin(), network.getEdges().end());
+        for (auto& edge : copyOfEdges) {
             if (p_dist(rng) < p_rewire) {
+                // If the source vertex is full, do not attempt to rewire it, it would loop forever so check the next original edge
+                if (network.degree(edge.source) >= network.getNumVertices() - 1) {
+                    continue;
+                }
+
+                // Repeatedly generate a new destination vertex until a new edge has been found.
                 std::uint32_t newDest = dest_dist(rng);
-                // Repeat the generation until the edge is not a self-edge, nor duplicate
-                // Not using do while so the search for the edge is ok.
-                // @note - this will be a challenge to parallelise efficiently without atomics (i.e. stable matching)
-                // @note - this will be expensive for large networks, an edge matrix would be cheaper (at the cost of N*N memory)
-                // @todo - need to avoid directed edge duplicates.
-                while (newDest == edge.source || std::find(network.edges.begin(), network.edges.end(), UndirectedNetwork::Edge{edge.source, newDest}) != network.edges.end()) {
+                // While the new dest is the source, or already in the graph, try again.
+                while (newDest == edge.source || network.contains(edge.source, newDest)) {
                     newDest = dest_dist(rng);
                 }
-                edge.dest = newDest;
+                // Remove the old edge
+                network.removeEdge(edge.source, edge.dest);
+                // Add the new edge
+                network.addEdge(edge.source, newDest);
             }
         }
     }

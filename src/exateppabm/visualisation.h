@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <tuple>
 
 #include "flamegpu/flamegpu.h"
 #include "exateppabm/input.h"
@@ -25,18 +26,16 @@ void setup(bool enable, flamegpu::ModelDescription& model, flamegpu::CUDASimulat
 void join();
 
 /**
- * Set visualisation specific agent variables for a given population
+ * Get visualistion properties for an agent, given model parameters and thier household index
  * 
- * I.e. set the x/y/z based on the their householdIdx
+ * This has had to be refactored to workaround a flame gpu limitation
  * 
- * This is more expensive as a separate loop, but only a one time cost and visualsiation runs are not as sensitive to performance
- * 
- * @param model flame gpu model description object
- * @param config simulation configuration parameters
- * @param pop FLAME GPU person population object, with partially initialised population data
  * @param householdCount the number of generated households
+ * @param householdIdx, the index of the current household
+ * @param idxWithinHousehold the index within the household for the agent.
+ * @return tuple of agent properties
  */
-void initialiseAgentPopulation(const flamegpu::ModelDescription& model, const exateppabm::input::config config, std::unique_ptr<flamegpu::AgentVector> & pop, const std::uint32_t householdCount);
+std::tuple<float, float, float> getAgentXYZ(const std::uint32_t householdCount, const std::uint32_t householdIdx, const std::uint8_t idxWithinHousehold);
 
 }  // namespace visualisation
 }  // namespace exateppabm

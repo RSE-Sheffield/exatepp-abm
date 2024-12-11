@@ -91,6 +91,9 @@ int entrypoint(int argc, char* argv[]) {
     // Define disease related variables and methods
     exateppabm::disease::SEIR::define(model, *config);
 
+    // Define init function for population generation
+    exateppabm::population::define(model, *config, cli_params->verbosity > 0);
+
     // Add init, step and exit functions related to data collection and output. This may want refactoring when multiple output files are supported or collected data becomes more complex.
     exateppabm::output::define(model, cli_params->outputDir, cli_params->individualFile);
 
@@ -99,15 +102,6 @@ int entrypoint(int argc, char* argv[]) {
     exateppabm::person::appendLayers(model);
     // Add disease progression
     exateppabm::disease::SEIR::appendLayers(model);
-
-    // Generate the population of agents
-    // prior to the simulation creation so any mutation of the model environment is applied. this is not ideal and will need adjusting for ensembles.
-    // @todo - this should probably be an in init function for ease of moving to a ensembles, but then cannot pass parameters in.
-    const std::uint64_t pop_seed = config->rng_seed;  // @todo - split seeds
-    auto personPopulation = exateppabm::population::generate(model, *config, cli_params->verbosity > 0);
-    if (personPopulation == nullptr) {
-        throw std::runtime_error("@todo - bad population generation function.");
-    }
 
     // Construct the Simulation instance from the model.
     flamegpu::CUDASimulation simulation(model);
@@ -132,9 +126,6 @@ int entrypoint(int argc, char* argv[]) {
 
     // Set the GPU index
     simulation.CUDAConfig().device_id = cli_params->device;
-
-    // add the population to this simulation instance
-    simulation.setPopulationData(*personPopulation);
 
     perfFile.timers.preSimulate.stop();
 

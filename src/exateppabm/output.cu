@@ -113,7 +113,7 @@ FLAMEGPU_EXIT_FUNCTION(output_exit_per_individual) {
     flamegpu::DeviceAgentVector population = personAgent.getPopulationData();
     for (const auto& person : population) {
         exateppabm::output::PerIndividualFile::Person personData = {};
-        personData.id = static_cast<std::uint32_t>(person.getID());
+        personData.id = static_cast<std::uint32_t>(person.getVariable<flamegpu::id_t>(person::v::ID));
         personData.age_group = person.getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
         personData.occupation_network = person.getVariable<std::uint32_t>(person::v::WORKPLACE_IDX);
         personData.house_no = person.getVariable<std::uint32_t>(person::v::HOUSEHOLD_IDX);

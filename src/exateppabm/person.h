@@ -67,34 +67,6 @@ DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT_TARGET[] = "rand
 }  // namespace v
 
 /**
- * Namespace containing person-message related constants
- */
-namespace message {
-/**
- * Namespace containing variable name constants for variables in household related messages
- */
-namespace household_status {
-DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "household_status";
-DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
-}  // namespace household_status
-/**
- * Namespace containing variable name constants for variables in workplace related messages
- */
-namespace workplace_status {
-DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "workplace_status";
-DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
-}  // namespace workplace_status
-
-/**
- * Namespace containing variable name constants for variables in workplace related messages
- */
-namespace random_network_status {
-DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "random_network_status";
-DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
-}  // namespace random_network_status
-}  // namespace message
-
-/**
  * Define the agent type representing a person in the simulation, mutating the model description object.
  * @param model flamegpu2 model description object to mutate
  * @param params model parameters from parameters file

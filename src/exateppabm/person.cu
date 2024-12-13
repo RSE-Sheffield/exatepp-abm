@@ -51,13 +51,13 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // Define household related agent variables, functions, etc
     household::define(model, params);
-    
+
     // Define workplace related agent variables, functions, etc
     workplace::define(model, params);
 
     // Define daily random interaction related agent variables, functions, etc
     random_interactions::define(model, params);
-    
+
     // Define visualisation specific behaviours
     visualisation::define(model, params);
 }

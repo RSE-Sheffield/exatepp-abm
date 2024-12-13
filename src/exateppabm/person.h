@@ -30,6 +30,7 @@ constexpr char NAME[] = "person";
 #ifdef EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS
 constexpr std::uint32_t MAX_RANDOM_DAILY_INTERACTIONS = EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS;
 #else
+constexpr std::uint32_t MAX_RANDOM_DAILY_INTERACTIONS = 1u;  // Declaring the variable for intellisense to not complain
 #error "EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS is not defined"
 #endif  // EXATEPP_ABM_MAX_RANDOM_DAILY_INTERACTIONS
 
@@ -92,8 +93,6 @@ DEVICE_CONSTEXPR_STRING constexpr char _NAME[] = "random_network_status";
 DEVICE_CONSTEXPR_STRING constexpr char ID[] = "id";
 }  // namespace random_network_status
 }  // namespace message
-
-
 
 /**
  * Define the agent type representing a person in the simulation, mutating the model description object.

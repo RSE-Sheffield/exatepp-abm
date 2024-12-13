@@ -8,12 +8,12 @@
 
 #include "fmt/core.h"
 #include "exateppabm/input.h"
-#include "exateppabm/population.h"
+#include "exateppabm/household.h"
 
 /**
  * Test getReferenceMeanHouseholdSize using a number of manual, partially filled config objects.
  */
-TEST(TestPopulation, getReferenceMeanHouseholdSize) {
+TEST(TestHousehold, getReferenceMeanHouseholdSize) {
     const double EPSILON = 1.0e-7;
     double value = 0.0;
     double expected = 0.0;
@@ -27,7 +27,7 @@ TEST(TestPopulation, getReferenceMeanHouseholdSize) {
     params.household_size_5 = 1;
     params.household_size_6 = 1;
     expected = 21 / 6.0;
-    value = exateppabm::population::getReferenceMeanHouseholdSize(params);
+    value = exateppabm::household::getReferenceMeanHouseholdSize(params);
     ASSERT_NEAR(value, expected, EPSILON);
 
     // Just houses sizes of 1
@@ -38,7 +38,7 @@ TEST(TestPopulation, getReferenceMeanHouseholdSize) {
     params.household_size_5 = 0;
     params.household_size_6 = 0;
     expected = 1.0 / 1.0;
-    value = exateppabm::population::getReferenceMeanHouseholdSize(params);
+    value = exateppabm::household::getReferenceMeanHouseholdSize(params);
     ASSERT_NEAR(value, expected, EPSILON);
 
     // Just houses sizes of 6
@@ -49,7 +49,7 @@ TEST(TestPopulation, getReferenceMeanHouseholdSize) {
     params.household_size_5 = 0;
     params.household_size_6 = 1;
     expected = 6.0 / 1.0;
-    value = exateppabm::population::getReferenceMeanHouseholdSize(params);
+    value = exateppabm::household::getReferenceMeanHouseholdSize(params);
     ASSERT_NEAR(value, expected, EPSILON);
 
     // Just houses sizes of 1 or 6
@@ -60,7 +60,7 @@ TEST(TestPopulation, getReferenceMeanHouseholdSize) {
     params.household_size_5 = 0;
     params.household_size_6 = 1;
     expected = 7 / 2.0;
-    value = exateppabm::population::getReferenceMeanHouseholdSize(params);
+    value = exateppabm::household::getReferenceMeanHouseholdSize(params);
     ASSERT_NEAR(value, expected, EPSILON);
 
     // Arbitrary mixed values
@@ -71,14 +71,14 @@ TEST(TestPopulation, getReferenceMeanHouseholdSize) {
     params.household_size_5 = 2;
     params.household_size_6 = 1;
     expected = 42 / 12.0;
-    value = exateppabm::population::getReferenceMeanHouseholdSize(params);
+    value = exateppabm::household::getReferenceMeanHouseholdSize(params);
     ASSERT_NEAR(value, expected, EPSILON);
 }
 
 /**
  * Get Check the cumulative household size probability vector is as expected for sample model parameters
  */
-TEST(TestPopulation, getHouseholdSizeCumulativeProbabilityVector) {
+TEST(TestHousehold, getHouseholdSizeCumulativeProbabilityVector) {
     const double EPSILON = 1.0e-7;
     std::vector<double> cumulativeP = {};
     std::vector<double> expected = {};
@@ -93,7 +93,7 @@ TEST(TestPopulation, getHouseholdSizeCumulativeProbabilityVector) {
     params.household_size_5 = 1;
     params.household_size_6 = 1;
     expected = {{ 1/6.0, 2/6.0, 3/6.0, 4/6.0, 5/6.0, 6/6.0 }};
-    cumulativeP = exateppabm::population::getHouseholdSizeCumulativeProbabilityVector(params);
+    cumulativeP = exateppabm::household::getHouseholdSizeCumulativeProbabilityVector(params);
     // Check the size
     ASSERT_EQ(cumulativeP.size(), EXPECTED_LENGTH);
     // Check the final element is approx equal 1.0
@@ -111,7 +111,7 @@ TEST(TestPopulation, getHouseholdSizeCumulativeProbabilityVector) {
     params.household_size_5 = 0;
     params.household_size_6 = 1;
     expected = {{ 1/2.0, 1/2.0, 1/2.0, 1/2.0, 1/2.0, 2/2.0 }};
-    cumulativeP = exateppabm::population::getHouseholdSizeCumulativeProbabilityVector(params);
+    cumulativeP = exateppabm::household::getHouseholdSizeCumulativeProbabilityVector(params);
     // Check the size
     ASSERT_EQ(cumulativeP.size(), EXPECTED_LENGTH);
     // Check the final element is approx equal 1.0
@@ -129,7 +129,7 @@ TEST(TestPopulation, getHouseholdSizeCumulativeProbabilityVector) {
     params.household_size_5 = 2;
     params.household_size_6 = 1;
     expected = {{ 0/9.0, 1/9.0, 3/9.0, 6/9.0, 8/9.0, 9/9.0 }};
-    cumulativeP = exateppabm::population::getHouseholdSizeCumulativeProbabilityVector(params);
+    cumulativeP = exateppabm::household::getHouseholdSizeCumulativeProbabilityVector(params);
     // Check the size
     ASSERT_EQ(cumulativeP.size(), EXPECTED_LENGTH);
     // Check the final element is approx equal 1.0
@@ -145,9 +145,9 @@ TEST(TestPopulation, getHouseholdSizeCumulativeProbabilityVector) {
  *
  *
  */
-TEST(TestPopulation, generateHouseholdStructures) {
+TEST(TestHousehold, generateHouseholdStructures) {
     const double EPSILON = 1.0e-7;
-    std::vector<exateppabm::population::HouseholdStructure> households;
+    std::vector<exateppabm::household::HouseholdStructure> households;
     std::mt19937_64 rng = std::mt19937_64(0);
     exateppabm::input::config params = {};
     std::uint64_t totalPeople = 0;
@@ -171,7 +171,7 @@ TEST(TestPopulation, generateHouseholdStructures) {
     params.population_70_79 = 0;
     params.population_80 = 0;
     rng.seed(params.rng_seed);
-    households = exateppabm::population::generateHouseholdStructures(params, rng, false);
+    households = exateppabm::household::generateHouseholdStructures(params, rng, false);
     // Should be 1 household
     ASSERT_EQ(households.size(), 1u);
     totalPeople = 0u;
@@ -221,7 +221,7 @@ TEST(TestPopulation, generateHouseholdStructures) {
     params.population_70_79 = 1;
     params.population_80 = 1;
     rng.seed(params.rng_seed);
-    households = exateppabm::population::generateHouseholdStructures(params, rng, false);
+    households = exateppabm::household::generateHouseholdStructures(params, rng, false);
     // Should be between 1 and 32 households
     ASSERT_GE(households.size(), 1u);
     ASSERT_LE(households.size(), 32u);
@@ -253,122 +253,4 @@ TEST(TestPopulation, generateHouseholdStructures) {
     }
     // Should be 32 person in total
     ASSERT_EQ(totalPeople, params.n_total);
-}
-
-
-/**
- * Test getAdultWorkplaceCumulativeProbabilityArray
- */
-
-TEST(TestPopulation, getAdultWorkplaceCumulativeProbabilityArray) {
-const double EPSILON = 1.0e-7;
-double child_network_adults = 0;
-double elderly_network_adults = 0;
-std::array<std::uint64_t, exateppabm::demographics::AGE_COUNT> n_per_age = {};
-std::array<double, exateppabm::population::WORKPLACE_COUNT> p = {};
-std::array<double, exateppabm::population::WORKPLACE_COUNT> expected = {};
-
-
-// With 0 adults in the child or elderly networks, should all be assigned to the adult network, regardless of population counts
-child_network_adults = 0;
-elderly_network_adults = 0;
-n_per_age = {{10, 10, 10, 10, 10, 10, 10, 10, 10}};
-expected = {{0.0, 0.0, 1.0, 1.0, 1.0}};
-p = exateppabm::population::getAdultWorkplaceCumulativeProbabilityArray(child_network_adults, elderly_network_adults, n_per_age);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_SCHOOL_0_9], expected[exateppabm::population::WORKPLACE_SCHOOL_0_9], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_SCHOOL_10_19], expected[exateppabm::population::WORKPLACE_SCHOOL_10_19], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_ADULT], expected[exateppabm::population::WORKPLACE_ADULT], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_70_79], expected[exateppabm::population::WORKPLACE_70_79], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_80_PLUS], expected[exateppabm::population::WORKPLACE_80_PLUS], EPSILON);
-
-// With 1 adults per member of work networks, and a population which will support this, generate probabilities that would lead to 20% of adults being assigned to each network
-child_network_adults = 1.0;
-elderly_network_adults = 1.0;
-// I.e. 20 children/elderly per network and 100 adults total, 20 in each network in the end
-n_per_age = {{20, 20, 20, 20, 20, 20, 20, 20, 20}};
-expected = {{0.2, 0.4, 0.6, 0.8, 1.0}};
-p = exateppabm::population::getAdultWorkplaceCumulativeProbabilityArray(child_network_adults, elderly_network_adults, n_per_age);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_SCHOOL_0_9], expected[exateppabm::population::WORKPLACE_SCHOOL_0_9], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_SCHOOL_10_19], expected[exateppabm::population::WORKPLACE_SCHOOL_10_19], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_ADULT], expected[exateppabm::population::WORKPLACE_ADULT], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_70_79], expected[exateppabm::population::WORKPLACE_70_79], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_80_PLUS], expected[exateppabm::population::WORKPLACE_80_PLUS], EPSILON);
-
-// With 10% in child networks, and 20% in elderly networks, and 100 adults total, generate the expected (unbalanced) values
-child_network_adults = 0.1;
-elderly_network_adults = 0.2;
-n_per_age = {{20, 20, 0, 0, 20, 0, 0, 20, 10}};
-// 2/20 adult, 2/20 adults, 10/20 adults, 4/20 adults, 2/20 adults, but cumulative.
-expected = {{0.1, 0.2, 0.7, 0.9, 1.0}};
-p = exateppabm::population::getAdultWorkplaceCumulativeProbabilityArray(child_network_adults, elderly_network_adults, n_per_age);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_SCHOOL_0_9], expected[exateppabm::population::WORKPLACE_SCHOOL_0_9], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_SCHOOL_10_19], expected[exateppabm::population::WORKPLACE_SCHOOL_10_19], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_ADULT], expected[exateppabm::population::WORKPLACE_ADULT], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_70_79], expected[exateppabm::population::WORKPLACE_70_79], EPSILON);
-EXPECT_NEAR(p[exateppabm::population::WORKPLACE_80_PLUS], expected[exateppabm::population::WORKPLACE_80_PLUS], EPSILON);
-
-// @todo - expand test with more edge case coverage
-}
-
-/**
- * Test generateWorkplaceForIndividual
- */
-TEST(TestPopulation, generateWorkplaceForIndividual) {
-// number of individuals to generate, to do a large enough sample to make sure returned values are in-range.
-constexpr std::uint64_t n_samples = 1000u;
-constexpr std::uint64_t n_samples_adult = 10000u;
-// rng state
-std::mt19937_64 rng(0u);
-// probability array
-std::array<double, exateppabm::population::WORKPLACE_COUNT> p_adult_workplace = {{0.1, 0.2, 0.8, 0.9, 1.0}};
-// Expected/target counts for adults (non-cumulative)
-std::array<double, exateppabm::population::WORKPLACE_COUNT> target_adult_workplace = {{
-    0.1 * n_samples_adult,
-    0.1 * n_samples_adult,
-    0.6 * n_samples_adult,
-    0.1 * n_samples_adult,
-    0.1 * n_samples_adult}};
-double TARGET_ADULT_EPSILON = 0.01 * n_samples_adult;
-
-// Repeatedly generate individuals of each age band from a given probability distribution, checking they are always the expected values
-
-// 0-9 always in their workplace
-for (std::uint64_t idx = 0; idx < n_samples; ++idx) {
-    auto w = exateppabm::population::generateWorkplaceForIndividual(exateppabm::demographics::AGE_0_9, p_adult_workplace, rng);
-    EXPECT_EQ(w, exateppabm::population::Workplace::WORKPLACE_SCHOOL_0_9);
-}
-// 10-19 always in their workplace
-for (std::uint64_t idx = 0; idx < n_samples; ++idx) {
-    auto w = exateppabm::population::generateWorkplaceForIndividual(exateppabm::demographics::AGE_10_19, p_adult_workplace, rng);
-    EXPECT_EQ(w, exateppabm::population::Workplace::WORKPLACE_SCHOOL_10_19);
-}
-// 70-79 always in their workplace
-for (std::uint64_t idx = 0; idx < n_samples; ++idx) {
-    auto w = exateppabm::population::generateWorkplaceForIndividual(exateppabm::demographics::AGE_70_79, p_adult_workplace, rng);
-    EXPECT_EQ(w, exateppabm::population::Workplace::WORKPLACE_70_79);
-}
-// 80+ always in their workplace
-for (std::uint64_t idx = 0; idx < n_samples; ++idx) {
-    auto w = exateppabm::population::generateWorkplaceForIndividual(exateppabm::demographics::AGE_80, p_adult_workplace, rng);
-    EXPECT_EQ(w, exateppabm::population::Workplace::WORKPLACE_80_PLUS);
-}
-// Adults are randomly assigned subject to the cumulative probability distribution.
-std::array<std::uint64_t, exateppabm::population::WORKPLACE_COUNT> workplaceAdults = {0};
-for (std::uint64_t idx = 0; idx < n_samples_adult; ++idx) {
-    // Just check a single age demo for simlicity
-    auto w = exateppabm::population::generateWorkplaceForIndividual(exateppabm::demographics::AGE_40_49, p_adult_workplace, rng);
-    // Ensure in range
-    EXPECT_GE(w, 0);
-    EXPECT_LT(w, exateppabm::population::WORKPLACE_COUNT);
-    // Increment the counter
-    ++workplaceAdults[w];
-}
-// Check that each counter is roughly correct.
-EXPECT_NEAR(workplaceAdults[exateppabm::population::Workplace::WORKPLACE_SCHOOL_0_9], target_adult_workplace[exateppabm::population::Workplace::WORKPLACE_SCHOOL_0_9], TARGET_ADULT_EPSILON);
-EXPECT_NEAR(workplaceAdults[exateppabm::population::Workplace::WORKPLACE_SCHOOL_10_19], target_adult_workplace[exateppabm::population::Workplace::WORKPLACE_SCHOOL_10_19], TARGET_ADULT_EPSILON);
-EXPECT_NEAR(workplaceAdults[exateppabm::population::Workplace::WORKPLACE_ADULT], target_adult_workplace[exateppabm::population::Workplace::WORKPLACE_ADULT], TARGET_ADULT_EPSILON);
-EXPECT_NEAR(workplaceAdults[exateppabm::population::Workplace::WORKPLACE_70_79], target_adult_workplace[exateppabm::population::Workplace::WORKPLACE_70_79], TARGET_ADULT_EPSILON);
-EXPECT_NEAR(workplaceAdults[exateppabm::population::Workplace::WORKPLACE_80_PLUS], target_adult_workplace[exateppabm::population::Workplace::WORKPLACE_80_PLUS], TARGET_ADULT_EPSILON);
-
-// @todo - expand test with more edge case coverage
 }

@@ -1,5 +1,7 @@
 #include "exateppabm/random_interactions.h"
 
+#include <vector>
+
 #include "flamegpu/flamegpu.h"
 #include "exateppabm/demographics.h"
 #include "exateppabm/disease.h"
@@ -8,6 +10,14 @@
 
 namespace exateppabm {
 namespace random_interactions {
+
+/**
+ * Namespace containing string constants related to messages lists within random interactions
+ * Use of __device__ constexpr char [] requires CUDA >= 11.4
+ */
+namespace message_random_network_status {
+    constexpr char _NAME[] = "random_network_status";
+}  // namespace message_random_network_status
 
 /**
  * Update the per-day random daily interaction network
@@ -127,13 +137,12 @@ FLAMEGPU_HOST_FUNCTION(updateRandomDailyNetworkIndices) {
 }
 
 /**
- * Agent function for person agents to emit their public information, i.e. infection status, for random daily network colleagues. This is put into a bucket key'd by the agent's ID.
+ * Agent function for person agents to emit their public information
+ * i.e. infection status, for random daily network colleagues.
  *
- * @note the bucket message is from 1...N, rather than 0 to match ID index.
  */
 FLAMEGPU_AGENT_FUNCTION(emitRandomDailyNetworkStatus, flamegpu::MessageNone, flamegpu::MessageArray) {
-    // output public properties to array message
-    // FLAMEGPU->message_out.setVariable<flamegpu::id_t>(person::message::random_daily_status::ID, FLAMEGPU->getVariable<flamegpu::id_t>(person::v::ID));
+    // output public properties to array message, keyed by the agent ID so no need to include the ID.
 
     FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::
     INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE));
@@ -224,8 +233,8 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flam
 void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params) {
     // Define related model environment properties
     flamegpu::EnvironmentDescription env = model.Environment();
-    
-    // Environmental property containing the relative transmission scale factor for random interactions 
+
+    // Environmental property containing the relative transmission scale factor for random interactions
     env.newProperty<float>("relative_transmission_random", params.relative_transmission_random);
 
     // Add an environmental variable containing the sum of each agents target number of random interactions.
@@ -238,7 +247,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     flamegpu::AgentDescription agent = model.Agent(person::NAME);
 
     // Define person agent variables related to the random interactions
-    
+
     // The target number of random interactions for this individual every day
     agent.newVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT_TARGET, 0u);
 
@@ -250,18 +259,17 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // Message list containing a persons current status for random,daily interaction (id, location, infection status)
     // Uses an array message with 1 per agent
-    flamegpu::MessageArray::Description randomNetworkStatusMessage = model.newMessage<flamegpu::MessageArray>(person::message::random_network_status::_NAME);
+    flamegpu::MessageArray::Description randomNetworkStatusMessage = model.newMessage<flamegpu::MessageArray>(message_random_network_status::_NAME);
     // ID's are 1 indexed (0 is unset) so use + 1.
     // For ensembles this will need to be the largest n_total until https://github.com/FLAMEGPU/FLAMEGPU2/issues/710 is implemented
     randomNetworkStatusMessage.setLength(params.n_total + 1);
-    // No need to add the agent ID to the message, it's implied by the bin count
-    // randomNetworkStatusMessage.newVariable<flamegpu::id_t>(person::message::random_network_status::ID);
+    // No need to add the agent ID to the message, it's the same as the array index
     // Add a variable for the agent's infections status
     randomNetworkStatusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
     // Agent's demographic
     randomNetworkStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
 
-    // Define host and agent functions 
+    // Define host and agent functions
 
     // Host function to generate todays random interaction list.
     // @todo - a GPU implementation will be needed for model scaling.
@@ -270,16 +278,15 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
 
     // emit current status for random interactions
     flamegpu::AgentFunctionDescription emitRandomDailyNetworkStatusDesc = agent.newFunction("emitRandomDailyNetworkStatus", emitRandomDailyNetworkStatus);
-    emitRandomDailyNetworkStatusDesc.setMessageOutput(person::message::random_network_status::_NAME);
+    emitRandomDailyNetworkStatusDesc.setMessageOutput(message_random_network_status::_NAME);
     emitRandomDailyNetworkStatusDesc.setInitialState(person::states::DEFAULT);
     emitRandomDailyNetworkStatusDesc.setEndState(person::states::DEFAULT);
 
     // Interact with other agents in the random interactions
     flamegpu::AgentFunctionDescription interactRandomDailyNetworkDesc = agent.newFunction("interactRandomDailyNetwork", interactRandomDailyNetwork);
-    interactRandomDailyNetworkDesc.setMessageInput(person::message::random_network_status::_NAME);
+    interactRandomDailyNetworkDesc.setMessageInput(message_random_network_status::_NAME);
     interactRandomDailyNetworkDesc.setInitialState(person::states::DEFAULT);
     interactRandomDailyNetworkDesc.setEndState(person::states::DEFAULT);
-
 }
 
 void appendLayers(flamegpu::ModelDescription& model) {

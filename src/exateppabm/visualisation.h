@@ -26,6 +26,14 @@ void setup(bool enable, flamegpu::ModelDescription& model, flamegpu::CUDASimulat
 void join();
 
 /**
+ * Define flame gpu 2 model properties and functions related to visualisation, intended to be called in person::define
+ * 
+ * @param model flamegpu2 model description object to mutate
+ * @param params model parameters from parameters file
+ */
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params);
+
+/**
  * Get visualistion properties for an agent, given model parameters and thier household index
  * 
  * This has had to be refactored to workaround a flame gpu limitation

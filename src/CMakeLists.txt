@@ -21,6 +21,7 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/household.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/network.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/OutputFile.h
@@ -29,13 +30,16 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/random_interactions.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/typedefs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/util.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/workplace.h
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/cli.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/demographics.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/disease/SEIR.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/exatepp_abm.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/household.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/input.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/network.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output.cu
@@ -45,8 +49,10 @@ SET(LIBRARY_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/output/TimeSeriesFile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/person.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/population.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/random_interactions.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/util.cu
     ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/visualisation.cu
+    ${CMAKE_CURRENT_SOURCE_DIR}/exateppabm/workplace.cu
 )
 
 flamegpu_add_library("${LIBRARY_NAME}" "${LIBRARY_SRC}" "${FLAMEGPU_ROOT}" "${PROJECT_BINARY_DIR}" FALSE)

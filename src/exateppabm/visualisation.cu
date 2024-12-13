@@ -97,6 +97,18 @@ void join() {
 #endif  // FLAMEGPU_VISUALISATION
 }
 
+void define(flamegpu::ModelDescription& model, const exateppabm::input::config& params) {
+#if defined(FLAMEGPU_VISUALISATION)
+    // Get a handle to the person agent type
+
+    // Define visualisation only properties
+    agent.newVariable<float>(person::v::x);
+    agent.newVariable<float>(person::v::y);
+    agent.newVariable<float>(person::v::z);
+
+#endif  // FLAMEGPU_VISUALISATION
+}
+
 std::tuple<float, float, float> getAgentXYZ(const std::uint32_t householdCount, const std::uint32_t householdIdx, const std::uint8_t idxWithinHousehold) {
 #if defined(FLAMEGPU_VISUALISATION)
     // Use the number of households to figure out the size of a 2D grid for visualisation purposes

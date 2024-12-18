@@ -41,6 +41,10 @@ struct params {
      * bool indicating if the individual file should be written
      */
     bool individualFile = false;
+    /**
+     * bool indicating if the transmission file should be written
+     */
+    bool transmissionFile = false;
 };
 
 /**

@@ -2,6 +2,7 @@
 
 #include <fmt/core.h>
 
+#include <limits>
 #include <vector>
 
 #include "exateppabm/disease/SEIR.h"
@@ -39,6 +40,12 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     agent.newVariable<std::uint32_t>(person::v::INFECTION_STATE_CHANGE_DAY, 0);
     // Time until next state change? Defaults to the simulation duration + 1.
     agent.newVariable<float>(person::v::INFECTION_STATE_DURATION, params.duration + 1);
+
+    // Store the time at which this agent most recently entered each disease state, using UINT_MAX as a not set value
+    agent.newVariable<std::uint32_t>(person::v::TIME_SUSCEPTIBLE, 0);
+    agent.newVariable<std::uint32_t>(person::v::TIME_EXPOSED, std::numeric_limits<std::uint32_t>::max());
+    agent.newVariable<std::uint32_t>(person::v::TIME_INFECTED, std::numeric_limits<std::uint32_t>::max());
+    agent.newVariable<std::uint32_t>(person::v::TIME_RECOVERED, std::numeric_limits<std::uint32_t>::max());
 
     // Integer count for the number of times infected, defaults to 0
     agent.newVariable<std::uint32_t>(person::v::INFECTION_COUNT, 0u);

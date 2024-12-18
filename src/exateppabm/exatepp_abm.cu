@@ -95,7 +95,7 @@ int entrypoint(int argc, char* argv[]) {
     exateppabm::population::define(model, *config, cli_params->verbosity > 0);
 
     // Add init, step and exit functions related to data collection and output. This may want refactoring when multiple output files are supported or collected data becomes more complex.
-    exateppabm::output::define(model, cli_params->outputDir, cli_params->individualFile);
+    exateppabm::output::define(model, cli_params->outputDir, cli_params->individualFile, cli_params->transmissionFile);
 
     // Build the model control flow. This will want abstracting more in the future @todo
     // @note - not using the DAG control flow due to bugs encountered in another project when splitting between compilation units.

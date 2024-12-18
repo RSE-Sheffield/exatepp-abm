@@ -10,10 +10,30 @@ if(TARGET exatepp_abm)
     add_test(
         NAME integration.defaultArgs
         COMMAND exatepp_abm
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
     set_tests_properties(integration.defaultArgs PROPERTIES LABELS "integration")
     set_tests_properties(integration.defaultArgs PROPERTIES WILL_FAIL FALSE)
+
+    # Test that running the default simulation with optional individual file output enabled runs successfully.
+    # This does not check that the file is actually produced, just that the simulation completes successfully.
+    add_test(
+        NAME integration.individualFile
+        COMMAND exatepp_abm --individual-file -o
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    set_tests_properties(integration.individualFile PROPERTIES LABELS "integration")
+    set_tests_properties(integration.individualFile PROPERTIES WILL_FAIL FALSE)
+
+    # Test that running the default simulation with optional transmission file output enabled runs successfully.
+    # This does not check that the file is actually produced, just that the simulation completes successfully.
+    add_test(
+        NAME integration.transmissionFile
+        COMMAND exatepp_abm --transmission-file
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+    set_tests_properties(integration.transmissionFile PROPERTIES LABELS "integration")
+    set_tests_properties(integration.transmissionFile PROPERTIES WILL_FAIL FALSE)
 endif()
 
 ## ------
@@ -46,7 +66,7 @@ flamegpu_add_executable("${PROJECT_NAME}" "${TESTS_SRC}" "${FLAMEGPU_ROOT}" "${P
 target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 # Link against GTest
 target_link_libraries("${PROJECT_NAME}" PRIVATE GTest::gtest)
-# Link against the static library 
+# Link against the static library
 target_link_libraries("${PROJECT_NAME}" PRIVATE exatepp_abm_lib)
 # Workaround for incremental rebuilds on MSVC, where device link was not being performed.
 # https://github.com/FLAMEGPU/FLAMEGPU2/issues/483

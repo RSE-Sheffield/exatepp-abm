@@ -54,6 +54,10 @@ DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE[] = "infection_state";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_CHANGE_DAY[] = "infection_state_change_day";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_STATE_DURATION[] = "infection_state_duration";
 DEVICE_CONSTEXPR_STRING constexpr char INFECTION_COUNT[] = "infection_count";
+DEVICE_CONSTEXPR_STRING constexpr char TIME_SUSCEPTIBLE[] = "time_susceptible";
+DEVICE_CONSTEXPR_STRING constexpr char TIME_EXPOSED[] = "time_exposed";
+DEVICE_CONSTEXPR_STRING constexpr char TIME_INFECTED[] = "time_infected";
+DEVICE_CONSTEXPR_STRING constexpr char TIME_RECOVERED[] = "time_recovered";
 DEVICE_CONSTEXPR_STRING constexpr char AGE_DEMOGRAPHIC[] = "age_demographic";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_IDX[] = "household_idx";
 DEVICE_CONSTEXPR_STRING constexpr char HOUSEHOLD_SIZE[] = "household_size";
@@ -62,8 +66,10 @@ DEVICE_CONSTEXPR_STRING constexpr char WORKPLACE_OUT_DEGREE[] = "workplace_out_d
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_PARTNERS[] = "random_interaction_partners";
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT[] = "random_interaction_count";
 DEVICE_CONSTEXPR_STRING constexpr char RANDOM_INTERACTION_COUNT_TARGET[] = "random_interaction_count_target";
-
-
+// Optionally available agent variables related to transmission file.
+DEVICE_CONSTEXPR_STRING constexpr char TF_EVENT_NETWORK[] = "tf_event_network";
+DEVICE_CONSTEXPR_STRING constexpr char TF_SOURCE_ID[] = "tf_source_id";  // id can be used to find workplace/household
+DEVICE_CONSTEXPR_STRING constexpr char TF_SOURCE_TIME_EXPOSED[] = "tf_source_time_exposed";
 }  // namespace v
 
 /**
@@ -84,9 +90,9 @@ void appendLayers(flamegpu::ModelDescription& model);
 
 /**
  * Device utility function for Increasing an individuals infection counter, for more legible agent code
- * 
+ *
  * Templated for due to the templated DeviceAPI object
- * 
+ *
  * @todo - consider moving to the disease namespace?
  */
 template<typename MsgIn, typename MsgOut>

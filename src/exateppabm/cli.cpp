@@ -15,6 +15,7 @@ void setup(CLI::App& app, std::shared_ptr<exateppabm::cli::params> params) {
     app.add_option("-n, --param-number", params->inputParamLine, "The line from the parameters file to use. 1 indexed (assuming there is a header)");
     app.add_option("-o, --output-dir", params->outputDir, "Path to output directory");
     app.add_flag("--individual-file", params->individualFile, "Enable the creation of the per individual file");
+    app.add_flag("--transmission-file", params->transmissionFile, "Enable the transmission file. This has significant performance implications");
 }
 
 void print(const exateppabm::cli::params params) {
@@ -25,6 +26,7 @@ void print(const exateppabm::cli::params params) {
     fmt::print("  inputParamLine = {}\n", params.inputParamLine);
     fmt::print("  outputDir = {}\n", params.outputDir);
     fmt::print("  individualFile = {}\n", params.individualFile);
+    fmt::print("  transmissionFile = {}\n", params.transmissionFile);
     fmt::print("}}\n");
 }
 

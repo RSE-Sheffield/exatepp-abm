@@ -25,6 +25,8 @@ FLAMEGPU_AGENT_FUNCTION(emitWorkplaceStatus, flamegpu::MessageNone, flamegpu::Me
     FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::
     INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE));
     FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC));
+    // Time of exposure, for (optional) transmission file output
+    FLAMEGPU->message_out.setVariable<std::uint32_t>(person::v::TIME_EXPOSED, FLAMEGPU->getVariable<std::uint32_t>(person::v::TIME_EXPOSED));
 
     // Set the message key to be the agent ID for array access
     FLAMEGPU->message_out.setIndex(FLAMEGPU->getVariable<flamegpu::id_t>(person::v::ID));
@@ -72,8 +74,9 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageArray, flamegpu::Mes
 
     // Only check interactions from this individual if they are susceptible. @todo - this will need to change for contact tracing.
     if (infectionState == disease::SEIR::Susceptible) {
-        // Bool to track if individual newly exposed - used to move expensive operations outside the message iteration loop.
-        bool newlyExposed = false;
+        // Variables to track who they were exposed by
+        flamegpu::id_t exposedBy = flamegpu::ID_NOT_SET;
+        std::uint32_t sourceTimeExposed = 0u;
         // Iterate my downstream neighbours (the graph is undirected, so no need to iterate in and out
         auto workplaceGraph = FLAMEGPU->environment.getDirectedGraph("WORKPLACE_DIGRAPH");
         std::uint32_t myVertexIndex = workplaceGraph.getVertexIndex(id);
@@ -93,8 +96,9 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageArray, flamegpu::Mes
                         // Roll a dice to determine if exposure occurred
                         float r = FLAMEGPU->random.uniform<float>();
                         if (r < p_s2e) {
-                            // set a flag indicating that the individual has been exposed in this message iteration loop
-                            newlyExposed = true;
+                            // Store info about who exposed this individual
+                            exposedBy = otherID;
+                            sourceTimeExposed = message.getVariable<std::uint32_t>(person::v::TIME_EXPOSED);
                             // break out of the message iteration loop, currently no need to check for multiple exposures on the same day.
                             break;
                         }
@@ -103,9 +107,9 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageArray, flamegpu::Mes
             }
         }
         // If newly exposed, update agent data and generate new seir state information. This is done outside the message iteration loop to be more GPU-shaped.
-        if (newlyExposed) {
+        if (exposedBy != flamegpu::ID_NOT_SET) {
             // Transition from susceptible to exposed in SEIR
-            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState);
+            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState, exposedBy, sourceTimeExposed, 1u);
         }
     }
 
@@ -144,6 +148,8 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     workplaceStatusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
     // Demographic
     workplaceStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
+    // time of exposure for transmission file logging
+    workplaceStatusMessage.newVariable<std::uint32_t>(person::v::TIME_EXPOSED);
 
     // emit current status to the workplace message list
     flamegpu::AgentFunctionDescription emitWorkplaceStatusDesc = agent.newFunction("emitWorkplaceStatus", emitWorkplaceStatus);

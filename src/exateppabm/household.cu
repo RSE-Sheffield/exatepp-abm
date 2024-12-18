@@ -39,6 +39,8 @@ FLAMEGPU_AGENT_FUNCTION(emitHouseholdStatus, flamegpu::MessageNone, flamegpu::Me
         FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::
         INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE));
         FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC));
+        // Time of exposure, for (optional) transmission file output
+        FLAMEGPU->message_out.setVariable<std::uint32_t>(person::v::TIME_EXPOSED, FLAMEGPU->getVariable<std::uint32_t>(person::v::TIME_EXPOSED));
         // Set the message key, the house hold idx for bucket messaging @Todo
         FLAMEGPU->message_out.setKey(householdIdx);
     }
@@ -77,12 +79,14 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBucket, flamegpu::Me
 
     // Only check interactions from this individual if they are susceptible. @todo - this will need to change for contact tracing.
     if (infectionState == disease::SEIR::Susceptible) {
-        // Bool to track if individual newly exposed - used to move expensive operations outside the message iteration loop.
-        bool newlyExposed = false;
+        // Variables to track who they were exposed by
+        flamegpu::id_t exposedBy = flamegpu::ID_NOT_SET;
+        std::uint32_t sourceTimeExposed = 0u;
         // Iterate messages from anyone within the household
         for (const auto &message : FLAMEGPU->message_in(householdIdx)) {
             // Ignore self messages (can't infect oneself)
-            if (message.getVariable<flamegpu::id_t>(message_household_status::ID) != id) {
+            flamegpu::id_t otherID = message.getVariable<flamegpu::id_t>(message_household_status::ID);
+            if (otherID != id) {
                 // Ignore messages from other households
                 if (message.getVariable<std::uint32_t>(person::v::HOUSEHOLD_IDX) == householdIdx) {
                     // Check if the other agent is infected
@@ -90,8 +94,9 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBucket, flamegpu::Me
                         // Roll a dice
                         float r = FLAMEGPU->random.uniform<float>();
                         if (r < p_s2e) {
-                            // set a flag indicating that the individual has been exposed in this message iteration loop
-                            newlyExposed = true;
+                            // Store info about who exposed this individual
+                            exposedBy = otherID;
+                            sourceTimeExposed = message.getVariable<std::uint32_t>(person::v::TIME_EXPOSED);
                             // break out of the message iteration loop, currently no need to check for multiple exposures on the same day.
                             break;
                         }
@@ -100,9 +105,9 @@ FLAMEGPU_AGENT_FUNCTION(interactHousehold, flamegpu::MessageBucket, flamegpu::Me
             }
         }
         // If newly exposed, update agent data and generate new seir state information. This is done outside the message iteration loop to be more GPU-shaped.
-        if (newlyExposed) {
+        if (exposedBy != flamegpu::ID_NOT_SET) {
             // Transition from susceptible to exposed in SEIR
-            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState);
+            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState, exposedBy, sourceTimeExposed, 0u);
         }
     }
 
@@ -136,6 +141,8 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     householdStatusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
     // Demographic?
     householdStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
+    // time of exposure for transmission file logging
+    householdStatusMessage.newVariable<std::uint32_t>(person::v::TIME_EXPOSED);
 
     // emit current status to the household
     flamegpu::AgentFunctionDescription emitHouseholdStatusDesc = agent.newFunction("emitHouseholdStatus", emitHouseholdStatus);

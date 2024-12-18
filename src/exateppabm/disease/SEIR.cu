@@ -17,9 +17,6 @@ FLAMEGPU_AGENT_FUNCTION(progressDisease, flamegpu::MessageNone, flamegpu::Messag
     // Get the current timestep / day
     std::uint32_t today = FLAMEGPU->getStepCounter();
 
-    // Get a handle to the total_infected_per_demographic macro env property
-    auto totalInfectedPerDemographic = FLAMEGPU->environment.getMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
-
     // Get the current agents infection status
     auto infectionState = FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
     // Get the time they last changed state
@@ -28,52 +25,23 @@ FLAMEGPU_AGENT_FUNCTION(progressDisease, flamegpu::MessageNone, flamegpu::Messag
     float stateDuration = FLAMEGPU->getVariable<float>(person::v::INFECTION_STATE_DURATION);
     // Ready to change state if today is past the next scheduled state change
     bool readyToChange = today >= dayOfLastStateChange + std::ceil(stateDuration);
-    // Get the agent's demographic
-    auto demographic_idx = FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
-
     // For each different initial state, change if required and compute the next state's duration.
-    if (infectionState == disease::SEIR::InfectionState::Susceptible) {
-        // no op
-    } else if (infectionState == disease::SEIR::InfectionState::Exposed) {
+    if (infectionState == disease::SEIR::InfectionState::Exposed) {
         // Exposed to Infected, if enough time has passed
         if (readyToChange) {
-            // Update the state
-            infectionState = disease::SEIR::InfectionState::Infected;
-            // Update the day
-            dayOfLastStateChange = today;
-            // Compute how long the next state will last
-            float mean = FLAMEGPU->environment.getProperty<float>("mean_time_to_recovered");
-            float sd = FLAMEGPU->environment.getProperty<float>("sd_time_to_recovered");
-            stateDuration = (FLAMEGPU->random.normal<float>() * sd) + mean;
-            // Atomically update the number of infected individuals  for the current individuals demographics when they transition into the infection state
-            totalInfectedPerDemographic[demographic_idx]++;
+            exposedToInfected(FLAMEGPU, infectionState);
         }
     } else if (infectionState == disease::SEIR::InfectionState::Infected) {
         // Infected to Recovered if enough time has passed
         if (readyToChange) {
-            // Update the state
-            infectionState = disease::SEIR::InfectionState::Recovered;
-            // Update the day
-            dayOfLastStateChange = today;
-            // Compute how long the next state will last
-            float mean = FLAMEGPU->environment.getProperty<float>("mean_time_to_susceptible");
-            float sd = FLAMEGPU->environment.getProperty<float>("sd_time_to_susceptible");
-            stateDuration = (FLAMEGPU->random.normal<float>() * sd) + mean;
+            infectedToRecovered(FLAMEGPU, infectionState);
         }
     } else if (infectionState == disease::SEIR::InfectionState::Recovered) {
         // Recovered to Susceptible, if enough time has passed.
         if (readyToChange) {
-            infectionState = disease::SEIR::Susceptible;
-            dayOfLastStateChange = today;
-            stateDuration = 0;  // susceptible doesn't have a fixed duration
+            recoveredToSusceptible(FLAMEGPU, infectionState);
         }
     }
-
-    // Update global agent variables from local (in register) values.
-    FLAMEGPU->setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE, infectionState);
-    FLAMEGPU->setVariable<std::uint32_t>(person::v::INFECTION_STATE_CHANGE_DAY, dayOfLastStateChange);
-    FLAMEGPU->setVariable<float>(person::v::INFECTION_STATE_DURATION, stateDuration);
-
     return flamegpu::ALIVE;
 }
 
@@ -86,7 +54,7 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     env.newMacroProperty<std::uint32_t, demographics::AGE_COUNT>("total_infected_per_demographic");
 
     // Add a number of model parameters to the environment, initialised with the value from the configuration file
-    // @todo - not all of these feel right here / add cosntexpr strings somewhere.
+    // @todo - not all of these feel right here / add constexpr strings somewhere.
     env.newProperty<float>("mean_time_to_infected", params.mean_time_to_infected);
     env.newProperty<float>("sd_time_to_infected", params.sd_time_to_infected);
     env.newProperty<float>("mean_time_to_recovered", params.mean_time_to_recovered);

@@ -52,6 +52,11 @@ struct HostPerson {
     workplace::WorkplaceUnderlyingType workplaceIdx = 0;
     std::uint32_t workplaceOutDegree = 0;
     std::uint32_t randomInteractionTarget = 0;
+    std::uint32_t timeExposed = std::numeric_limits<std::uint32_t>::max();
+    std::uint32_t timeInfected = std::numeric_limits<std::uint32_t>::max();
+    flamegpu::id_t sourceID = flamegpu::ID_NOT_SET;
+    std::uint32_t sourceTimeExposed = std::numeric_limits<std::uint32_t>::max();
+    std::uint8_t sourceNetwork = 0u;
 };
 
 /**
@@ -60,7 +65,7 @@ struct HostPerson {
  * This function has been split into multiple init functions, due to errors encountered when attempting to do multiple passes over a newly created set of agents. There should be a working way to do this...
  */
 FLAMEGPU_INIT_FUNCTION(generatePopulation) {
-    fmt::print("@todo - validate params inputs when generated agents (pop size, initial infected count etc)\n");
+    // @todo validate that simulation input parameters are valid values (positive non zero, less than uint32_t::max-1 etc)
     // n_total must be less than uint max
     // n_total must be more than 0.
     // initial infected count must be more than 0, less than full pop.
@@ -162,6 +167,25 @@ FLAMEGPU_INIT_FUNCTION(generatePopulation) {
             if (infectionStatus == disease::SEIR::Infected) {
                 // person.setVariable<std::uint32_t>(exateppabm::person::v::INFECTION_COUNT, 1u);
                 hostPersonData[personIdx].infectionCount = 1u;
+
+                // person.setVariable<std::uint32_t>(exateppabm::person::v::TIME_EXPOSED, 0u);
+                hostPersonData[personIdx].timeExposed = 0u;
+
+                // person.setVariable<std::uint32_t>(exateppabm::person::v::TIME_INFECTED, 0u);
+                hostPersonData[personIdx].timeInfected = 0u;
+
+                // source of infection for seed cases is themself
+                // person.setVariable<flamegpu::id_t>(exateppabm::person::v::TF_SOURCE_ID, personID);
+                hostPersonData[personIdx].sourceID = personID;
+
+                // Source of infection exposure time is 0.
+                // person.setVariable<std::uint32_t>(exateppabm::person::v::TF_SOURCE_TIME_EXPOSED, 0u);
+                hostPersonData[personIdx].sourceTimeExposed = 0u;
+
+                // Network is 4? @todo enum
+                // person.setVariable<std::uint8_t>(exateppabm::person::v::TF_EVENT_NETWORK, 4u);
+                hostPersonData[personIdx].sourceNetwork = 4u;
+
                 // Increment the per-age demographic initial agent count. @todo refactor elsewhere?
                 _infectedPerDemographic[age]++;
             }
@@ -344,6 +368,11 @@ FLAMEGPU_INIT_FUNCTION(generatePopulation) {
         person.setVariable<workplace::WorkplaceUnderlyingType>(person::v::WORKPLACE_IDX, hostPerson.workplaceIdx);
         person.setVariable<std::uint32_t>(person::v::WORKPLACE_OUT_DEGREE, hostPerson.workplaceOutDegree);
         person.setVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT_TARGET, hostPerson.randomInteractionTarget);
+        person.setVariable<std::uint32_t>(person::v::TIME_EXPOSED, hostPerson.timeExposed);
+        person.setVariable<std::uint32_t>(person::v::TIME_INFECTED, hostPerson.timeInfected);
+        person.setVariable<std::uint32_t>(person::v::TF_SOURCE_ID, hostPerson.sourceID);
+        person.setVariable<std::uint32_t>(exateppabm::person::v::TF_SOURCE_TIME_EXPOSED, hostPerson.sourceTimeExposed);
+        person.setVariable<std::uint8_t>(exateppabm::person::v::TF_EVENT_NETWORK, hostPerson.sourceNetwork);
 
 
         // If this is a visualisation enabled build, set their x/y/z

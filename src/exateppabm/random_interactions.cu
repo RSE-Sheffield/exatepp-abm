@@ -147,6 +147,8 @@ FLAMEGPU_AGENT_FUNCTION(emitRandomDailyNetworkStatus, flamegpu::MessageNone, fla
     FLAMEGPU->message_out.setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::
     INFECTION_STATE, FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE));
     FLAMEGPU->message_out.setVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC, FLAMEGPU->getVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC));
+    // Time of exposure, for (optional) transmission file output
+    FLAMEGPU->message_out.setVariable<std::uint32_t>(person::v::TIME_EXPOSED, FLAMEGPU->getVariable<std::uint32_t>(person::v::TIME_EXPOSED));
 
     // Set the message array message index to the agent's id.
     FLAMEGPU->message_out.setIndex(FLAMEGPU->getVariable<flamegpu::id_t>(person::v::ID));
@@ -183,8 +185,9 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flam
 
     // Only check interactions from this individual if they are susceptible. @todo - this will need to change for contact tracing.
     if (infectionState == disease::SEIR::Susceptible) {
-        // Bool to track if individual newly exposed - used to move expensive operations outside the message iteration loop.
-        bool newlyExposed = false;
+        // Variables to track who they were exposed by
+        flamegpu::id_t exposedBy = flamegpu::ID_NOT_SET;
+        std::uint32_t sourceTimeExposed = 0u;
         // For each interaction this agent is set to perform
         const std::uint32_t randomInteractionCount = FLAMEGPU->getVariable<std::uint32_t>(person::v::RANDOM_INTERACTION_COUNT);
         for (std::uint32_t randomInteractionIdx = 0; randomInteractionIdx < randomInteractionCount; ++randomInteractionIdx) {
@@ -199,8 +202,9 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flam
                     // Roll a dice
                     float r = FLAMEGPU->random.uniform<float>();
                     if (r < p_s2e) {
-                        // set a flag indicating that the individual has been exposed in this message iteration loop
-                        newlyExposed = true;
+                        // Store info about who exposed this individual
+                        exposedBy = otherID;
+                        sourceTimeExposed = message.getVariable<std::uint32_t>(person::v::TIME_EXPOSED);
                         // break out of the loop over today's random interactions - can only be exposed once
                         break;
                     }
@@ -208,9 +212,9 @@ FLAMEGPU_AGENT_FUNCTION(interactRandomDailyNetwork, flamegpu::MessageArray, flam
             }
         }
         // If newly exposed, update agent data and generate new seir state information. This is done outside the message iteration loop to be more GPU-shaped.
-        if (newlyExposed) {
+        if (exposedBy != flamegpu::ID_NOT_SET) {
             // Transition from susceptible to exposed in SEIR
-            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState);
+            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState, exposedBy, sourceTimeExposed, 2u);
         }
     }
 
@@ -261,6 +265,8 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     randomNetworkStatusMessage.newVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
     // Agent's demographic
     randomNetworkStatusMessage.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC);
+    // time of exposure for transmission file logging
+    randomNetworkStatusMessage.newVariable<std::uint32_t>(person::v::TIME_EXPOSED);
 
     // Define host and agent functions
 

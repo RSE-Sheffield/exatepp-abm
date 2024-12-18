@@ -2,6 +2,7 @@
 
 #include <fmt/core.h>
 
+#include <limits>
 #include <vector>
 
 #include "exateppabm/disease/SEIR.h"
@@ -40,12 +41,27 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
     // Time until next state change? Defaults to the simulation duration + 1.
     agent.newVariable<float>(person::v::INFECTION_STATE_DURATION, params.duration + 1);
 
+    // Store the time at which this agent most recently entered each disease state, using UINT_MAX as a not set value
+    agent.newVariable<std::uint32_t>(person::v::TIME_EXPOSED, std::numeric_limits<std::uint32_t>::max());
+    agent.newVariable<std::uint32_t>(person::v::TIME_INFECTED, std::numeric_limits<std::uint32_t>::max());
+    agent.newVariable<std::uint32_t>(person::v::TIME_RECOVERED, std::numeric_limits<std::uint32_t>::max());
+    agent.newVariable<std::uint32_t>(person::v::TIME_SUSCEPTIBLE, std::numeric_limits<std::uint32_t>::max());
+
     // Integer count for the number of times infected, defaults to 0
     agent.newVariable<std::uint32_t>(person::v::INFECTION_COUNT, 0u);
 
     // age demographic
     // @todo make this an enum, and update uses of it, but flame's templating disagrees?
     agent.newVariable<demographics::AgeUnderlyingType>(person::v::AGE_DEMOGRAPHIC, exateppabm::demographics::Age::AGE_0_9);
+
+    // Add agent variables for the person agent to store information for the transmission File.
+    // Ideally these would only be stored when required, but then lots of tracking would be needed in agent code. RTC would be a good solution @todo
+    // The network in which the transmission event occurred. @todo enum. 0 is home, 1 is work, 2 is random
+    agent.newVariable<std::uint8_t>(person::v::TF_EVENT_NETWORK, 0);
+    // The agent id for the source of infection
+    agent.newVariable<flamegpu::id_t>(person::v::TF_SOURCE_ID, 0);
+    // The time at which the source of infection was exposed.
+    agent.newVariable<std::uint32_t>(person::v::TF_SOURCE_TIME_EXPOSED, std::numeric_limits<std::uint32_t>::max());
 
     // Call define methods for specific behaviours related to person, which will add additional agent variables, messages and functions to the model
 

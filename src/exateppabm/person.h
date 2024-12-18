@@ -82,6 +82,18 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
  */
 void appendLayers(flamegpu::ModelDescription& model);
 
+/**
+ * Device utility function for Increasing an individuals infection counter, for more legible agent code
+ * 
+ * Templated for due to the templated DeviceAPI object
+ * 
+ * @todo - consider moving to the disease namespace?
+ */
+template<typename MsgIn, typename MsgOut>
+FLAMEGPU_DEVICE_FUNCTION void incrementInfectionCounter(flamegpu::DeviceAPI<MsgIn, MsgOut>* FLAMEGPU) {
+    FLAMEGPU->template setVariable<std::uint32_t>(v::INFECTION_COUNT, FLAMEGPU->template getVariable<std::uint32_t>(v::INFECTION_COUNT) + 1);
+}
+
 
 // Undefine the host device macro to avoid potential macro collisions
 #undef DEVICE_CONSTEXPR_STRING

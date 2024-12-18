@@ -68,12 +68,12 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageArray, flamegpu::Mes
     p_s2e *= relativeSusceptibility;
 
     // Check if the current individual is susceptible to being infected
-    auto infectionState = FLAMEGPU->getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
+    auto infectionState = disease::SEIR::getCurrentInfectionStatus(FLAMEGPU);
 
-    // @todo - this will need to change for contact tracing, the message interaction will need to occur regardless.
+    // Only check interactions from this individual if they are susceptible. @todo - this will need to change for contact tracing.
     if (infectionState == disease::SEIR::Susceptible) {
-        // Variable to store the duration of the exposed phase (if exposed)
-        float stateDuration = 0.f;
+        // Bool to track if individual newly exposed - used to move expensive operations outside the message iteration loop.
+        bool newlyExposed = false;
         // Iterate my downstream neighbours (the graph is undirected, so no need to iterate in and out
         auto workplaceGraph = FLAMEGPU->environment.getDirectedGraph("WORKPLACE_DIGRAPH");
         std::uint32_t myVertexIndex = workplaceGraph.getVertexIndex(id);
@@ -93,25 +93,19 @@ FLAMEGPU_AGENT_FUNCTION(interactWorkplace, flamegpu::MessageArray, flamegpu::Mes
                         // Roll a dice to determine if exposure occurred
                         float r = FLAMEGPU->random.uniform<float>();
                         if (r < p_s2e) {
-                            // I have been exposed
-                            infectionState = disease::SEIR::InfectionState::Exposed;
-                            // Generate how long until I am infected
-                            float mean = FLAMEGPU->environment.getProperty<float>("mean_time_to_infected");
-                            float sd = FLAMEGPU->environment.getProperty<float>("sd_time_to_infected");
-                            stateDuration = (FLAMEGPU->random.normal<float>() * sd) + mean;
-                            // @todo - for now only any exposure matters. This may want to change when quantity of exposure is important?
-                            // Increment the infection counter for this individual
-                            FLAMEGPU->setVariable<std::uint32_t>(person::v::INFECTION_COUNT, FLAMEGPU->getVariable<std::uint32_t>(person::v::INFECTION_COUNT) + 1);
+                            // set a flag indicating that the individual has been exposed in this message iteration loop
+                            newlyExposed = true;
+                            // break out of the message iteration loop, currently no need to check for multiple exposures on the same day.
                             break;
                         }
                     }
                 }
             }
         }
-        // If newly exposed, store the value in global device memory.
-        if (infectionState == disease::SEIR::InfectionState::Exposed) {
-            FLAMEGPU->setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE, infectionState);
-            FLAMEGPU->setVariable<float>(person::v::INFECTION_STATE_DURATION, stateDuration);
+        // If newly exposed, update agent data and generate new seir state information. This is done outside the message iteration loop to be more GPU-shaped.
+        if (newlyExposed) {
+            // Transition from susceptible to exposed in SEIR
+            disease::SEIR::susceptibleToExposed(FLAMEGPU, infectionState);
         }
     }
 

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include "flamegpu/flamegpu.h"
 #include "exateppabm/input.h"
+#include "exateppabm/person.h"
 
 namespace exateppabm {
 namespace disease {
@@ -52,6 +53,46 @@ void define(flamegpu::ModelDescription& model, const exateppabm::input::config& 
  */
 
 void appendLayers(flamegpu::ModelDescription& model);
+
+/**
+ * Device utility function to get an individuals current infection status from global agent memory
+ * 
+ * Templated for due to the templated DeviceAPI object
+ *  * 
+ * @param FLAMEGPU flame gpu device API object
+ * @return individuals current infection state
+ */
+template<typename MsgIn, typename MsgOut>
+FLAMEGPU_DEVICE_FUNCTION disease::SEIR::InfectionStateUnderlyingType getCurrentInfectionStatus(flamegpu::DeviceAPI<MsgIn, MsgOut>* FLAMEGPU) {
+    return FLAMEGPU->template getVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE);
+}
+
+
+/**
+ * Device utility function for when an individual is exposed, moving from susceptible to exposed
+ * 
+ * Templated for due to the templated DeviceAPI object
+ * 
+ * @param FLAMEGPU flamegpu device api object
+ * @param current infection status for the individual to be mutated in-place
+ */
+template<typename MsgIn, typename MsgOut>
+FLAMEGPU_DEVICE_FUNCTION void susceptibleToExposed(flamegpu::DeviceAPI<MsgIn, MsgOut>* FLAMEGPU, disease::SEIR::InfectionStateUnderlyingType& infectionStatus) {
+    // Generate how long the individual will be in the exposed for.
+    float mean = FLAMEGPU->environment.template getProperty<float>("mean_time_to_infected");
+    float sd = FLAMEGPU->environment.template getProperty<float>("sd_time_to_infected");
+    float stateDuration = (FLAMEGPU->random.template normal<float>() * sd) + mean;
+
+    // Update the referenced value containing the individuals current infections status, used to reduce branching within a device for loop.
+    infectionStatus = disease::SEIR::InfectionState::Exposed;
+    // Update individuals infection state in global agent memory
+    FLAMEGPU->template setVariable<disease::SEIR::InfectionStateUnderlyingType>(person::v::INFECTION_STATE, infectionStatus);
+    // Update the individual infection state duration in global agent memory
+    FLAMEGPU->template setVariable<float>(person::v::INFECTION_STATE_DURATION, stateDuration);
+
+    // Increment the infection counter for this individual
+    person::incrementInfectionCounter(FLAMEGPU);
+}
 
 }  // namespace SEIR
 

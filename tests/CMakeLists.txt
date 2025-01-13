@@ -19,7 +19,7 @@ if(TARGET exatepp_abm)
     # This does not check that the file is actually produced, just that the simulation completes successfully.
     add_test(
         NAME integration.individualFile
-        COMMAND exatepp_abm --individual-file -o
+        COMMAND exatepp_abm --individual-file
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
     set_tests_properties(integration.individualFile PROPERTIES LABELS "integration")

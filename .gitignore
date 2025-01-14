@@ -507,6 +507,7 @@ venv**/
 .venv**/
 *.png
 *.csv
+*.sh
 
 # vscode configuration files (debugging etc)
 .vscode/
